@@ -1,22 +1,799 @@
-<script type="module">
-const firebaseConfig = {
-  apiKey: "AIzaSyAwlWUvMOBfz2pTh18MqpDsVk3Hl-xPmJQ",
-  authDomain: "coinflip-97336.firebaseapp.com",
-  databaseURL: "https://coinflip-97336-default-rtdb.firebaseio.com",
-  projectId: "coinflip-97336",
-  appId: "1:1026597403544:web:f204ff9806ca73b7ecc9ed",
-  measurementId: "G-D45WX8RGCW"
-};
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>CoinFlip Multiplayer</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a2e;
+      --card2:#0f1730;
+      --line:rgba(255,255,255,.10);
+      --text:#eef4ff;
+      --muted:#a9b7d4;
+      --good:#20d38b;
+      --bad:#ff5b6e;
+      --accent:#4fd1c5;
+      --shadow:0 16px 40px rgba(0,0,0,.35);
+      --r:22px;
+      --tap:48px;
+      --gap:12px;
+      --safeB: env(safe-area-inset-bottom, 0px);
+      --safeT: env(safe-area-inset-top, 0px);
+    }
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
+    *{box-sizing:border-box}
+    html,body{height:100%}
 
-let user = null;
-await signInAnonymously(auth);
-onAuthStateChanged(auth, u => { user = u; });
-</script>
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: max(12px, var(--safeT)) 12px calc(112px + var(--safeB));
+    }
+
+    /* Single-column */
+    .wrap{width:min(520px, 100%); margin:0 auto; display:grid; gap:12px;}
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .topbar{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+    .topbar h1{font-size:18px; margin:0; letter-spacing:.2px;}
+
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+
+    /* Connectivity pill */
+    .pill{
+      font-weight:900;
+      border-radius:999px;
+      padding:7px 12px;
+      border:1px solid var(--line);
+      font-size:12px;
+      letter-spacing:.4px;
+      white-space:nowrap;
+    }
+    .pill.good{color: var(--good); border-color: rgba(32,211,139,.35)}
+    .pill.bad{color: var(--bad); border-color: rgba(255,91,110,.35)}
+
+    .hint{font-size:12px; color:var(--muted); line-height:1.45; margin:0;}
+    .label{font-size:12px; color:var(--muted)}
+
+    /* Result row */
+    .resultRow{display:flex; align-items:flex-end; justify-content:space-between; gap:12px;}
+    .latestLabel{font-size:12px; color:var(--muted)}
+    .latest{
+      font-size:20px;
+      font-weight:950;
+      letter-spacing:.12em;
+      text-indent:.12em;
+      line-height:1.1;
+    }
+
+    .roomBlock{display:grid; gap:6px; text-align:right;}
+    .roomCode{font-size:16px; font-weight:950;}
+
+    /* Coin */
+    .stage{display:grid; gap:12px; align-items:center; justify-items:center; padding: 12px;}
+    .coinWrap{position:relative; perspective: 1200px;}
+
+    .coin{
+      width: clamp(140px, 36vw, 190px);
+      height: clamp(140px, 36vw, 190px);
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateY(0deg) rotateX(0deg);
+      transition: transform 1.1s cubic-bezier(.2,.8,.2,1);
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,.45));
+      will-change: transform;
+    }
+
+    .face{
+      position:absolute; inset:0;
+      border-radius:999px;
+      display:flex; align-items:center; justify-content:center;
+      backface-visibility:hidden;
+      border: 10px solid rgba(255,255,255,.14);
+      background: #151f37;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.08);
+    }
+
+    .face span{
+      font-weight: 1000;
+      letter-spacing: .22em;
+      text-indent: .22em;
+      font-size: clamp(14px, 3.8vw, 18px);
+      color: rgba(238,244,255,.92);
+      text-shadow:
+        0 2px 0 rgba(0,0,0,.35),
+        0 -1px 0 rgba(255,255,255,.12);
+      user-select:none;
+    }
+
+    .heads{ transform: rotateY(0deg) translateZ(14px); }
+    .tails{ transform: rotateY(180deg) translateZ(14px); }
+
+    .edge{
+      position:absolute; inset:0;
+      border-radius:999px;
+      transform: translateZ(0);
+      background: rgba(255,255,255,.06);
+      opacity:.16;
+      pointer-events:none;
+    }
+
+    /* FLIPPING overlay */
+    .overlay{
+      position:absolute; inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      border-radius:999px;
+      background: rgba(11,16,32,.62);
+      border:1px solid rgba(255,255,255,.10);
+      pointer-events:none;
+    }
+    .overlay .txt{
+      font-weight:1000;
+      letter-spacing:.22em;
+      text-indent:.22em;
+      font-size:14px;
+      color: var(--text);
+    }
+    .flipping .overlay{display:flex;}
+
+    /* Pulse */
+    @keyframes glowPulse{
+      0%{ box-shadow: 0 0 0 rgba(79,209,197,0); }
+      40%{ box-shadow: 0 0 0 10px rgba(79,209,197,.18); }
+      100%{ box-shadow: 0 0 0 rgba(79,209,197,0); }
+    }
+    @keyframes textPulse{
+      0%{ text-shadow: 0 0 0 rgba(79,209,197,0); }
+      40%{ text-shadow: 0 0 18px rgba(79,209,197,.35); }
+      100%{ text-shadow: 0 0 0 rgba(79,209,197,0); }
+    }
+    .pulseCoin{ animation: glowPulse 300ms ease-out; border-radius:999px; }
+    .pulseText{ animation: textPulse 300ms ease-out; }
+
+    /* Players */
+    .metaRow{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; width:100%;}
+    .metaVal{font-size:15px; font-weight:950;}
+
+    /* Sticky action bar */
+    .actionBar{
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + var(--safeB));
+      z-index: 30;
+      background: #0e1428;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      padding: 12px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap);
+    }
+
+    .btn{
+      min-height: var(--tap);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #182242;
+      color: var(--text);
+      font-weight: 950;
+      letter-spacing:.2px;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      width:100%;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{ border-color: rgba(79,209,197,.45); background: rgba(79,209,197,.14); }
+    .btn.danger{ border-color: rgba(255,91,110,.45); background: rgba(255,91,110,.12); }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+    /* Modal (native-like, performant) */
+    .modalBackdrop{
+      position: fixed;
+      inset: 0;
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding: 12px;
+      background: rgba(0,0,0,.55);
+      z-index: 60;
+    }
+    .modalBackdrop.open{display:flex;}
+
+    .modal{
+      width:min(520px, 100%);
+      background: var(--card2);
+      border:1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.55);
+      padding: 14px;
+      transform: translateY(8px);
+      animation: pop 160ms ease-out;
+    }
+
+    @keyframes pop{
+      from{ transform: translateY(18px); opacity:.9; }
+      to{ transform: translateY(8px); opacity:1; }
+    }
+
+    .modalHeader{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+    .modalTitle{font-size:16px; margin:0; font-weight:950;}
+
+    .iconBtn{
+      min-height: var(--tap);
+      min-width: var(--tap);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      font-weight: 950;
+      cursor:pointer;
+    }
+
+    .input{
+      width: 100%;
+      min-height: var(--tap);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      padding: 12px 12px;
+      outline: none;
+      font-size: 16px; /* prevent iOS zoom */
+    }
+    .input:focus{ border-color: rgba(79,209,197,.55); }
+
+    .modalActions{display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top:12px;}
+
+    /* Log */
+    .log{
+      margin:0; padding:0; list-style:none;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      overflow:auto;
+      max-height: 220px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .log li{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.06)}
+    .log li:last-child{border-bottom:0}
+
+    /* SR */
+    .srOnly{
+      position:absolute !important;
+      width:1px; height:1px;
+      padding:0; margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      white-space:nowrap;
+      border:0;
+    }
+
+    /* Reduce motion */
+    @media (prefers-reduced-motion: reduce){
+      .coin{ transition:none !important; }
+      .pulseCoin, .pulseText{ animation:none !important; }
+      .modal{ animation:none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap" aria-label="CoinFlip Multiplayer">
+    <section class="card">
+      <div class="topbar">
+        <h1>CoinFlip Multiplayer</h1>
+        <span id="conn" class="pill bad" aria-label="Connectivity">OFFLINE</span>
+      </div>
+      <p class="hint" style="margin-top:10px">Tap <b>Room</b> to create a room. Tap <b>Link</b> to share. Your partner opens the link and joins instantly.</p>
+    </section>
+
+    <section class="card">
+      <div class="resultRow">
+        <div>
+          <div class="latestLabel">Latest result</div>
+          <div id="latest" class="latest" aria-live="polite">—</div>
+        </div>
+        <div class="roomBlock">
+          <div class="label">Room</div>
+          <div id="roomCode" class="mono roomCode">—</div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="coinWrap" id="coinWrap">
+          <div id="coin" class="coin" aria-label="Coin">
+            <div class="face heads"><span>HEADS</span></div>
+            <div class="face tails"><span>TAILS</span></div>
+            <div class="edge" aria-hidden="true"></div>
+          </div>
+          <div class="overlay" aria-hidden="true"><div class="txt">FLIPPING…</div></div>
+        </div>
+
+        <div class="metaRow">
+          <div>
+            <div class="label">Players</div>
+            <div id="players" class="mono metaVal">—</div>
+          </div>
+          <div style="text-align:right">
+            <div class="label">You</div>
+            <div id="you" class="mono metaVal">—</div>
+          </div>
+        </div>
+
+        <div id="status" class="hint" style="width:100%"></div>
+      </div>
+
+      <div class="srOnly" id="ariaLive" aria-live="polite" aria-atomic="true"></div>
+    </section>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="label">Flip log (latest first)</div>
+        <div class="pill" id="verifyHint" style="padding:6px 10px">VERIFY: ON</div>
+      </div>
+      <ul id="log" class="log" style="margin-top:10px"></ul>
+    </section>
+  </main>
+
+  <!-- Sticky action bar -->
+  <nav class="actionBar" aria-label="Actions">
+    <div class="grid">
+      <button id="roomBtn" class="btn primary">Room</button>
+      <button id="linkBtn" class="btn" disabled>Link</button>
+      <button id="flipBtn" class="btn primary" disabled>Flip</button>
+      <button id="resetBtn" class="btn danger" disabled>Reset</button>
+    </div>
+  </nav>
+
+  <!-- Modal: Join room / paste code -->
+  <div id="modalBackdrop" class="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modalHeader">
+        <h2 id="modalTitle" class="modalTitle">Join a Room</h2>
+        <button id="closeModal" class="iconBtn" aria-label="Close">✕</button>
+      </div>
+      <p class="hint" style="margin-top:8px">Paste the room code from your partner. Example: <span class="mono">a8k3x1p9</span></p>
+
+      <div style="margin-top:12px">
+        <label class="label" for="roomInput">Room code</label>
+        <input id="roomInput" class="input mono" inputmode="latin" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="Enter room code" />
+      </div>
+
+      <div class="modalActions">
+        <button id="joinBtn" class="btn primary">Join</button>
+        <button id="pasteBtn" class="btn">Paste</button>
+      </div>
+
+      <p id="modalMsg" class="hint" style="margin-top:10px"></p>
+    </div>
+  </div>
+
+  <script type="module">
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwlWUvMOBfz2pTh18MqpDsVk3Hl-xPmJQ",
+      authDomain: "coinflip-97336.firebaseapp.com",
+      databaseURL: "https://coinflip-97336-default-rtdb.firebaseio.com",
+      projectId: "coinflip-97336",
+      appId: "1:1026597403544:web:f204ff9806ca73b7ecc9ed",
+      measurementId: "G-D45WX8RGCW"
+    };
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getDatabase, ref, set, push, onValue, onChildAdded, onDisconnect,
+      update, remove, get
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const $ = (id) => document.getElementById(id);
+
+    const ui = {
+      conn: $("conn"),
+      latest: $("latest"),
+      roomCode: $("roomCode"),
+      players: $("players"),
+      you: $("you"),
+      status: $("status"),
+      ariaLive: $("ariaLive"),
+
+      coin: $("coin"),
+      coinWrap: $("coinWrap"),
+
+      roomBtn: $("roomBtn"),
+      linkBtn: $("linkBtn"),
+      flipBtn: $("flipBtn"),
+      resetBtn: $("resetBtn"),
+
+      log: $("log"),
+      verifyHint: $("verifyHint"),
+
+      // Modal
+      modalBackdrop: $("modalBackdrop"),
+      closeModal: $("closeModal"),
+      roomInput: $("roomInput"),
+      joinBtn: $("joinBtn"),
+      pasteBtn: $("pasteBtn"),
+      modalMsg: $("modalMsg"),
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    let user = null;
+    let roomId = null;
+    let selfRole = "player";
+    let isReady = false;
+    let isFlipping = false;
+
+    // ----- UI helpers -----
+    function setStatus(msg){ ui.status.textContent = msg; }
+
+    function setConn(connected){
+      ui.conn.textContent = connected ? "CONNECTED" : "OFFLINE";
+      ui.conn.className = `pill ${connected ? "good" : "bad"}`;
+    }
+
+    function enableRoomActions(enabled){
+      ui.linkBtn.disabled = !enabled;
+      ui.flipBtn.disabled = !enabled;
+      ui.resetBtn.disabled = !enabled;
+    }
+
+    function setRoomUI(id){
+      ui.roomCode.textContent = id || "—";
+      ui.linkBtn.disabled = !id;
+    }
+
+    function inviteLink(id){
+      const url = new URL(location.href);
+      url.hash = `#room=${id}`;
+      return url.toString();
+    }
+
+    function randId(len=8){
+      const abc = "abcdefghijklmnopqrstuvwxyz0123456789";
+      let s="";
+      for(let i=0;i<len;i++) s += abc[Math.floor(Math.random()*abc.length)];
+      return s;
+    }
+
+    function vibrate(ms=25){
+      try{ if(navigator.vibrate) navigator.vibrate(ms); }catch{}
+    }
+
+    // WebAudio flip sound
+    let audioCtx = null;
+    function flipSound(){
+      try{
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const t = audioCtx.currentTime;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = "triangle";
+        o.frequency.setValueAtTime(620, t);
+        o.frequency.exponentialRampToValueAtTime(240, t + 0.08);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.12, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.10);
+        o.connect(g).connect(audioCtx.destination);
+        o.start(t);
+        o.stop(t + 0.11);
+      }catch{}
+    }
+
+    function pulse(){
+      ui.coinWrap.classList.remove("pulseCoin");
+      ui.latest.classList.remove("pulseText");
+      void ui.coinWrap.offsetWidth;
+      ui.coinWrap.classList.add("pulseCoin");
+      ui.latest.classList.add("pulseText");
+      setTimeout(() => {
+        ui.coinWrap.classList.remove("pulseCoin");
+        ui.latest.classList.remove("pulseText");
+      }, 320);
+    }
+
+    // Modal controls
+    function openModal(){
+      ui.modalMsg.textContent = "";
+      ui.roomInput.value = "";
+      ui.modalBackdrop.classList.add("open");
+      // focus input (slight delay for iOS)
+      setTimeout(() => ui.roomInput.focus(), 60);
+    }
+
+    function closeModal(){
+      ui.modalBackdrop.classList.remove("open");
+    }
+
+    // close modal on backdrop tap
+    ui.modalBackdrop.addEventListener("click", (e) => {
+      if(e.target === ui.modalBackdrop) closeModal();
+    });
+
+    ui.closeModal.addEventListener("click", closeModal);
+
+    // ----- Crypto verify (commit-reveal) -----
+    async function sha256Hex(str){
+      const enc = new TextEncoder().encode(str);
+      const buf = await crypto.subtle.digest("SHA-256", enc);
+      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
+    }
+
+    // ----- Coin animation -----
+    function showFlipping(on){ ui.coinWrap.classList.toggle("flipping", on); }
+
+    function animateCoin(result){
+      const spins = 4 + Math.floor(Math.random()*3); // 4–6
+      const landing = result === "HEADS" ? 0 : 180;
+      const rotY = spins*360 + landing;
+      const jitterX = (Math.random()*18 - 9);
+
+      ui.coin.style.transition = "transform 1.1s cubic-bezier(.2,.8,.2,1)";
+      ui.coin.style.transform = `rotateY(${rotY}deg) rotateX(${jitterX}deg)`;
+      setTimeout(() => {
+        ui.coin.style.transition = "transform .25s ease";
+        ui.coin.style.transform = `rotateY(${landing}deg) rotateX(0deg)`;
+      }, 1120);
+    }
+
+    // ----- Room logic -----
+    function roomBase(id){ return ref(db, `rooms/${id}`); }
+
+    async function ensureSignedIn(){
+      await signInAnonymously(auth);
+      onAuthStateChanged(auth, (u) => {
+        user = u;
+        ui.you.textContent = u ? u.uid.slice(0,8) : "—";
+      });
+    }
+
+    async function createRoom(){
+      if(!isReady) return;
+      const id = randId(8);
+      roomId = id;
+      selfRole = "host";
+
+      await set(roomBase(id), {
+        meta: { createdAt: Date.now(), updatedAt: Date.now(), latest: null },
+        players: {},
+        flips: {}
+      });
+      await joinRoom(id);
+      setStatus("Room created. Tap Link to share.");
+    }
+
+    async function joinRoom(id){
+      if(!isReady || !id) return;
+      const snap = await get(roomBase(id));
+      if(!snap.exists()){
+        enableRoomActions(false);
+        setStatus("Room not found.");
+        roomId = null;
+        setRoomUI(null);
+        return;
+      }
+
+      roomId = id;
+      setRoomUI(id);
+      enableRoomActions(true);
+      location.hash = `#room=${id}`;
+
+      const playerRef = ref(db, `rooms/${id}/players/${user.uid}`);
+      await set(playerRef, { joinedAt: Date.now(), role: selfRole, nick: user.uid.slice(0,8) });
+      onDisconnect(playerRef).remove();
+
+      onValue(ref(db, `rooms/${id}/players`), (s) => {
+        const v = s.val() || {};
+        const list = Object.values(v).map(p=>p.nick);
+        ui.players.textContent = list.length ? `${list.length} (${list.join(", ")})` : "—";
+      });
+
+      onValue(ref(db, `rooms/${id}/meta/latest`), (s) => {
+        const v = s.val();
+        if(!v?.result) return;
+        ui.latest.textContent = v.result;
+        ui.ariaLive.textContent = `Latest result ${v.result}`;
+        animateCoin(v.result);
+        pulse();
+      });
+
+      ui.log.innerHTML = "";
+      onChildAdded(ref(db, `rooms/${id}/flips`), async (s) => {
+        const v = s.val();
+        if(!v) return;
+        const stamp = new Date(v.at || Date.now()).toLocaleString();
+        let verify = "";
+        if(v.commit && v.nonce && v.result){
+          const check = await sha256Hex(`${v.nonce}|${v.result}`);
+          verify = (check === v.commit) ? "✅" : "❌";
+        }
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div style="display:flex; justify-content:space-between; gap:10px; align-items:center">
+            <div class="mono" style="font-weight:950">${v.result || "(pending)"}</div>
+            <div class="mono" style="font-weight:950">${verify}</div>
+          </div>
+          <div class="label" style="margin-top:4px">${stamp} • by ${v.by || "—"}</div>
+        `;
+        ui.log.prepend(li);
+        while(ui.log.children.length > 20) ui.log.removeChild(ui.log.lastChild);
+      });
+
+      setStatus("Joined. Tap Flip.");
+    }
+
+    async function copyInvite(){
+      if(!roomId) return;
+      const link = inviteLink(roomId);
+      try{ await navigator.clipboard.writeText(link); setStatus("Invite link copied."); }
+      catch{ prompt("Copy this link:", link); }
+    }
+
+    async function resetRoom(){
+      if(!roomId) return;
+      await remove(ref(db, `rooms/${roomId}/flips`));
+      await update(ref(db, `rooms/${roomId}/meta`), { latest: null, updatedAt: Date.now() });
+      ui.latest.textContent = "—";
+      ui.ariaLive.textContent = "Latest result cleared";
+      ui.log.innerHTML = "";
+      ui.coin.style.transform = "rotateY(0deg)";
+      setStatus("Room reset.");
+    }
+
+    async function flipCoin(){
+      if(!roomId || !user || isFlipping) return;
+
+      isFlipping = true;
+      showFlipping(true);
+      vibrate(25);
+      flipSound();
+
+      const result = Math.random() < 0.5 ? "HEADS" : "TAILS";
+      const at = Date.now();
+      const nonce = crypto.getRandomValues(new Uint32Array(4)).join("-");
+      const commit = await sha256Hex(`${nonce}|${result}`);
+
+      const flipRef = push(ref(db, `rooms/${roomId}/flips`));
+      await set(flipRef, { status:"commit", commit, by: user.uid.slice(0,8), at });
+
+      animateCoin(result);
+
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const revealDelay = reduce ? 60 : 1100;
+
+      setTimeout(async () => {
+        await update(flipRef, { status:"reveal", result, nonce });
+        await update(ref(db, `rooms/${roomId}/meta`), { latest: { result, at }, updatedAt: at });
+
+        ui.latest.textContent = result;
+        ui.ariaLive.textContent = `Latest result ${result}`;
+        pulse();
+
+        showFlipping(false);
+        isFlipping = false;
+      }, revealDelay);
+    }
+
+    // ----- Modal actions -----
+    async function pasteRoomCode(){
+      ui.modalMsg.textContent = "";
+      try{
+        const txt = await navigator.clipboard.readText();
+        ui.roomInput.value = (txt || "").trim().replace(/^#?room=/i, "");
+        ui.modalMsg.textContent = ui.roomInput.value ? "Pasted." : "Clipboard is empty.";
+      }catch{
+        ui.modalMsg.textContent = "Clipboard paste blocked. Paste manually.";
+      }
+    }
+
+    async function joinFromModal(){
+      const id = ui.roomInput.value.trim().toLowerCase();
+      if(!id){ ui.modalMsg.textContent = "Enter a room code."; return; }
+      selfRole = "player";
+      await joinRoom(id);
+      if(roomId) closeModal();
+    }
+
+    ui.pasteBtn.addEventListener("click", pasteRoomCode);
+    ui.joinBtn.addEventListener("click", joinFromModal);
+
+    ui.roomInput.addEventListener("keydown", (e) => {
+      if(e.key === "Enter") joinFromModal();
+      if(e.key === "Escape") closeModal();
+    });
+
+    // ----- Bottom bar buttons -----
+    ui.roomBtn.addEventListener("click", () => {
+      // If already in a room, tapping Room opens modal to join another room.
+      // This is deliberate: thumb UX.
+      if(roomId){ openModal(); }
+      else createRoom();
+    });
+
+    ui.linkBtn.addEventListener("click", copyInvite);
+    ui.flipBtn.addEventListener("click", flipCoin);
+    ui.resetBtn.addEventListener("click", resetRoom);
+
+    // Also allow long-press behavior substitute: double-tap Room to open modal even if not in room
+    let lastTap = 0;
+    ui.roomBtn.addEventListener("touchend", () => {
+      const now = Date.now();
+      if(now - lastTap < 320){
+        openModal();
+      }
+      lastTap = now;
+    }, {passive:true});
+
+    // ----- Boot -----
+    enableRoomActions(false);
+    setStatus("Loading…");
+
+    onValue(ref(db, ".info/connected"), (snap) => setConn(!!snap.val()));
+
+    await ensureSignedIn();
+    isReady = true;
+
+    // Auto-join by hash
+    const m = (location.hash || "").match(/room=([a-z0-9]{4,20})/i);
+    if(m){
+      await joinRoom(m[1]);
+    }else{
+      setStatus("Ready. Tap Room to create one.");
+    }
+
+    ui.verifyHint.textContent = "VERIFY: ON";
+
+    // Keyboard shortcut (desktop testing): J to open join modal
+    window.addEventListener("keydown", (e) => {
+      if(e.key.toLowerCase() === "j") openModal();
+    });
+
+  </script>
+
+  <!--
+  =========================
+  FIREBASE RULES (IMPORTANT)
+  =========================
+  Realtime Database Rules:
+
+  {
+    "rules": {
+      "rooms": {
+        "$roomId": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          "players": {
+            "$uid": { ".write": "$uid === auth.uid" }
+          }
+        }
+      }
+    }
+  }
+
+  Notes:
+  - You MUST enable Anonymous Auth or you'll get auth/configuration-not-found.
+  - Commit-reveal verification is cheat-resistant, not cheat-proof.
+  -->
+</body>
+</html>
