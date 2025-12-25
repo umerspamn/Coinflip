@@ -1,5 +1,6 @@
 
 <!doctype html>
+
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -8,290 +9,340 @@
   <style>
     :root{
       --bg:#0b1020;
-      --card:#121a2e;
-      --card2:#0f1730;
+      --panel:#121a2e;
+      --panel2:#0f1730;
       --line:rgba(255,255,255,.10);
       --text:#eef4ff;
       --muted:#a9b7d4;
       --good:#20d38b;
       --bad:#ff5b6e;
       --accent:#4fd1c5;
-      --shadow:0 16px 40px rgba(0,0,0,.35);
+      --shadow:0 14px 34px rgba(0,0,0,.38);
       --r:22px;
-      --tap:48px;
+      --tap:52px; /* thumb comfort, >=48 */
       --gap:12px;
       --safeB: env(safe-area-inset-bottom, 0px);
       --safeT: env(safe-area-inset-top, 0px);
-    }
+    }*{box-sizing:border-box}
+html,body{height:100%}
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding: max(12px, var(--safeT)) 12px calc(120px + var(--safeB));
+}
 
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: max(12px, var(--safeT)) 12px calc(112px + var(--safeB));
-    }
+/* single column */
+.wrap{width:min(540px, 100%); margin:0 auto; display:grid; gap:12px;}
 
-    /* Single-column */
-    .wrap{width:min(520px, 100%); margin:0 auto; display:grid; gap:12px;}
+.card{
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
 
-    .card{
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--r);
-      box-shadow: var(--shadow);
-      padding: 14px;
-    }
+.topbar{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.topbar h1{font-size:18px; margin:0; letter-spacing:.2px;}
 
-    .topbar{display:flex; align-items:center; justify-content:space-between; gap:10px;}
-    .topbar h1{font-size:18px; margin:0; letter-spacing:.2px;}
+.mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
 
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+.pill{
+  font-weight:1000;
+  border-radius:999px;
+  padding:7px 12px;
+  border:1px solid var(--line);
+  font-size:12px;
+  letter-spacing:.4px;
+  white-space:nowrap;
+}
+.pill.good{color: var(--good); border-color: rgba(32,211,139,.35)}
+.pill.bad{color: var(--bad); border-color: rgba(255,91,110,.35)}
 
-    /* Connectivity pill */
-    .pill{
-      font-weight:900;
-      border-radius:999px;
-      padding:7px 12px;
-      border:1px solid var(--line);
-      font-size:12px;
-      letter-spacing:.4px;
-      white-space:nowrap;
-    }
-    .pill.good{color: var(--good); border-color: rgba(32,211,139,.35)}
-    .pill.bad{color: var(--bad); border-color: rgba(255,91,110,.35)}
+.hint{font-size:12px; color:var(--muted); line-height:1.45; margin:0;}
+.label{font-size:12px; color:var(--muted)}
 
-    .hint{font-size:12px; color:var(--muted); line-height:1.45; margin:0;}
-    .label{font-size:12px; color:var(--muted)}
+.resultRow{display:flex; align-items:flex-end; justify-content:space-between; gap:12px;}
+.latestLabel{font-size:12px; color:var(--muted)}
+.latest{
+  font-size:22px;
+  font-weight:1000;
+  letter-spacing:.12em;
+  text-indent:.12em;
+  line-height:1.1;
+}
 
-    /* Result row */
-    .resultRow{display:flex; align-items:flex-end; justify-content:space-between; gap:12px;}
-    .latestLabel{font-size:12px; color:var(--muted)}
-    .latest{
-      font-size:20px;
-      font-weight:950;
-      letter-spacing:.12em;
-      text-indent:.12em;
-      line-height:1.1;
-    }
+.roomBlock{display:grid; gap:6px; text-align:right;}
+.roomCode{font-size:16px; font-weight:1000; letter-spacing:.06em;}
 
-    .roomBlock{display:grid; gap:6px; text-align:right;}
-    .roomCode{font-size:16px; font-weight:950;}
+/* coin */
+.stage{display:grid; gap:12px; align-items:center; justify-items:center; padding: 12px;}
+.coinWrap{position:relative; perspective: 1200px;}
 
-    /* Coin */
-    .stage{display:grid; gap:12px; align-items:center; justify-items:center; padding: 12px;}
-    .coinWrap{position:relative; perspective: 1200px;}
+.coinRig{
+  width: clamp(140px, 36vw, 190px);
+  height: clamp(140px, 36vw, 190px);
+  position: relative;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 14px 26px rgba(0,0,0,.45));
+  will-change: transform;
+}
 
-    .coin{
-      width: clamp(140px, 36vw, 190px);
-      height: clamp(140px, 36vw, 190px);
-      position: relative;
-      transform-style: preserve-3d;
-      transform: rotateY(0deg) rotateX(0deg);
-      transition: transform 1.1s cubic-bezier(.2,.8,.2,1);
-      filter: drop-shadow(0 14px 26px rgba(0,0,0,.45));
-      will-change: transform;
-    }
+.coin{
+  position:absolute; inset:0;
+  transform-style: preserve-3d;
+  transform: rotateY(var(--restY, 0deg));
+  will-change: transform;
+}
 
-    .face{
-      position:absolute; inset:0;
-      border-radius:999px;
-      display:flex; align-items:center; justify-content:center;
-      backface-visibility:hidden;
-      border: 10px solid rgba(255,255,255,.14);
-      background: #151f37;
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,.08);
-    }
+.face{
+  position:absolute; inset:0;
+  border-radius:999px;
+  display:flex; align-items:center; justify-content:center;
+  backface-visibility:hidden;
+  border: 10px solid rgba(255,255,255,.14);
+  background: #151f37;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.08);
+}
 
-    .face span{
-      font-weight: 1000;
-      letter-spacing: .22em;
-      text-indent: .22em;
-      font-size: clamp(14px, 3.8vw, 18px);
-      color: rgba(238,244,255,.92);
-      text-shadow:
-        0 2px 0 rgba(0,0,0,.35),
-        0 -1px 0 rgba(255,255,255,.12);
-      user-select:none;
-    }
+.face span{
+  font-weight: 1000;
+  letter-spacing: .22em;
+  text-indent: .22em;
+  font-size: clamp(14px, 3.8vw, 18px);
+  color: rgba(238,244,255,.92);
+  text-shadow:
+    0 2px 0 rgba(0,0,0,.35),
+    0 -1px 0 rgba(255,255,255,.12);
+  user-select:none;
+}
 
-    .heads{ transform: rotateY(0deg) translateZ(14px); }
-    .tails{ transform: rotateY(180deg) translateZ(14px); }
+.heads{ transform: rotateY(0deg) translateZ(14px); }
+.tails{ transform: rotateY(180deg) translateZ(14px); }
 
-    .edge{
-      position:absolute; inset:0;
-      border-radius:999px;
-      transform: translateZ(0);
-      background: rgba(255,255,255,.06);
-      opacity:.16;
-      pointer-events:none;
-    }
+.edge{
+  position:absolute; inset:0;
+  border-radius:999px;
+  background: rgba(255,255,255,.06);
+  opacity:.14;
+  pointer-events:none;
+}
 
-    /* FLIPPING overlay */
-    .overlay{
-      position:absolute; inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      border-radius:999px;
-      background: rgba(11,16,32,.62);
-      border:1px solid rgba(255,255,255,.10);
-      pointer-events:none;
-    }
-    .overlay .txt{
-      font-weight:1000;
-      letter-spacing:.22em;
-      text-indent:.22em;
-      font-size:14px;
-      color: var(--text);
-    }
-    .flipping .overlay{display:flex;}
+/* overlay */
+.overlay{
+  position:absolute; inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  background: rgba(11,16,32,.64);
+  border:1px solid rgba(255,255,255,.10);
+  pointer-events:none;
+}
+.overlay .txt{
+  font-weight:1000;
+  letter-spacing:.22em;
+  text-indent:.22em;
+  font-size:14px;
+  color: var(--text);
+}
+.animating + .overlay{display:flex;}
 
-    /* Pulse */
-    @keyframes glowPulse{
-      0%{ box-shadow: 0 0 0 rgba(79,209,197,0); }
-      40%{ box-shadow: 0 0 0 10px rgba(79,209,197,.18); }
-      100%{ box-shadow: 0 0 0 rgba(79,209,197,0); }
-    }
-    @keyframes textPulse{
-      0%{ text-shadow: 0 0 0 rgba(79,209,197,0); }
-      40%{ text-shadow: 0 0 18px rgba(79,209,197,.35); }
-      100%{ text-shadow: 0 0 0 rgba(79,209,197,0); }
-    }
-    .pulseCoin{ animation: glowPulse 300ms ease-out; border-radius:999px; }
-    .pulseText{ animation: textPulse 300ms ease-out; }
+/* Keyframe flip (uses CSS variables injected by JS) */
+@keyframes coinFlipY{
+  0%   { transform: rotateY(var(--fromY)) translateZ(0); }
+  65%  { transform: rotateY(calc(var(--toY) - 120deg)) translateZ(0); }
+  100% { transform: rotateY(var(--toY)) translateZ(0); }
+}
 
-    /* Players */
-    .metaRow{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; width:100%;}
-    .metaVal{font-size:15px; font-weight:950;}
+/* Wobble/tilt on the rig during flip */
+@keyframes rigWobble{
+  0%   { transform: rotateX(0deg) rotateZ(0deg); }
+  20%  { transform: rotateX(-9deg) rotateZ(1.2deg); }
+  40%  { transform: rotateX(8deg) rotateZ(-1.2deg); }
+  60%  { transform: rotateX(-6deg) rotateZ(1.0deg); }
+  80%  { transform: rotateX(4deg) rotateZ(-0.8deg); }
+  100% { transform: rotateX(0deg) rotateZ(0deg); }
+}
 
-    /* Sticky action bar */
-    .actionBar{
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: calc(12px + var(--safeB));
-      z-index: 30;
-      background: #0e1428;
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      box-shadow: 0 18px 50px rgba(0,0,0,.45);
-      padding: 12px;
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--gap);
-    }
+/* settle bounce */
+@keyframes settle{
+  0%   { transform: scale(1); }
+  55%  { transform: scale(1.018); }
+  100% { transform: scale(1); }
+}
 
-    .btn{
-      min-height: var(--tap);
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: #182242;
-      color: var(--text);
-      font-weight: 950;
-      letter-spacing:.2px;
-      cursor:pointer;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      width:100%;
-    }
-    .btn:active{ transform: translateY(1px); }
-    .btn.primary{ border-color: rgba(79,209,197,.45); background: rgba(79,209,197,.14); }
-    .btn.danger{ border-color: rgba(255,91,110,.45); background: rgba(255,91,110,.12); }
-    .btn:disabled{ opacity:.55; cursor:not-allowed; }
+.coin.animating{
+  animation: coinFlipY var(--dur, 1100ms) cubic-bezier(.2,.8,.2,1) forwards;
+}
+.coinRig.wobbling{
+  animation: rigWobble var(--dur, 1100ms) ease-out forwards;
+}
+.coinRig.settle{
+  animation: settle 180ms ease-out;
+}
 
-    /* Modal (native-like, performant) */
-    .modalBackdrop{
-      position: fixed;
-      inset: 0;
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      padding: 12px;
-      background: rgba(0,0,0,.55);
-      z-index: 60;
-    }
-    .modalBackdrop.open{display:flex;}
+/* glow pulse */
+@keyframes glowPulse{
+  0%{ box-shadow: 0 0 0 rgba(79,209,197,0); }
+  40%{ box-shadow: 0 0 0 10px rgba(79,209,197,.18); }
+  100%{ box-shadow: 0 0 0 rgba(79,209,197,0); }
+}
+@keyframes textPulse{
+  0%{ text-shadow: 0 0 0 rgba(79,209,197,0); }
+  40%{ text-shadow: 0 0 18px rgba(79,209,197,.35); }
+  100%{ text-shadow: 0 0 0 rgba(79,209,197,0); }
+}
+.pulseCoin{ animation: glowPulse 300ms ease-out; border-radius:999px; }
+.pulseText{ animation: textPulse 300ms ease-out; }
 
-    .modal{
-      width:min(520px, 100%);
-      background: var(--card2);
-      border:1px solid var(--line);
-      border-radius: 22px;
-      box-shadow: 0 24px 70px rgba(0,0,0,.55);
-      padding: 14px;
-      transform: translateY(8px);
-      animation: pop 160ms ease-out;
-    }
+.metaRow{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; width:100%;}
+.metaVal{font-size:15px; font-weight:1000;}
 
-    @keyframes pop{
-      from{ transform: translateY(18px); opacity:.9; }
-      to{ transform: translateY(8px); opacity:1; }
-    }
+/* sticky bottom bar */
+.actionBar{
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + var(--safeB));
+  z-index: 30;
+  background: #0e1428;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.45);
+  padding: 12px;
+}
 
-    .modalHeader{display:flex; align-items:center; justify-content:space-between; gap:10px;}
-    .modalTitle{font-size:16px; margin:0; font-weight:950;}
+.grid{ display:grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
 
-    .iconBtn{
-      min-height: var(--tap);
-      min-width: var(--tap);
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: transparent;
-      color: var(--text);
-      font-weight: 950;
-      cursor:pointer;
-    }
+.btn{
+  min-height: var(--tap);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #182242;
+  color: var(--text);
+  font-weight: 1000;
+  letter-spacing:.2px;
+  cursor:pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  width:100%;
+  transition: transform 120ms ease;
+}
 
-    .input{
-      width: 100%;
-      min-height: var(--tap);
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: transparent;
-      color: var(--text);
-      padding: 12px 12px;
-      outline: none;
-      font-size: 16px; /* prevent iOS zoom */
-    }
-    .input:focus{ border-color: rgba(79,209,197,.55); }
+.btn:active{ transform: translateY(1px) scale(.99); }
+.btn.primary{ border-color: rgba(79,209,197,.45); background: rgba(79,209,197,.14); }
+.btn.danger{ border-color: rgba(255,91,110,.45); background: rgba(255,91,110,.12); }
+.btn:disabled{ opacity:.55; cursor:not-allowed; }
 
-    .modalActions{display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top:12px;}
+/* bottom-sheet modal */
+.sheetBackdrop{
+  position: fixed;
+  inset: 0;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  padding: 12px;
+  background: rgba(0,0,0,.58);
+  z-index: 60;
+}
+.sheetBackdrop.open{display:flex;}
 
-    /* Log */
-    .log{
-      margin:0; padding:0; list-style:none;
-      border:1px solid var(--line);
-      border-radius: 14px;
-      overflow:auto;
-      max-height: 220px;
-      -webkit-overflow-scrolling: touch;
-    }
-    .log li{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.06)}
-    .log li:last-child{border-bottom:0}
+.sheet{
+  width:min(540px, 100%);
+  background: var(--panel2);
+  border:1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 26px 80px rgba(0,0,0,.60);
+  padding: 14px;
+  transform: translateY(14px);
+  animation: sheetUp 180ms ease-out;
+}
 
-    /* SR */
-    .srOnly{
-      position:absolute !important;
-      width:1px; height:1px;
-      padding:0; margin:-1px;
-      overflow:hidden;
-      clip:rect(0,0,0,0);
-      white-space:nowrap;
-      border:0;
-    }
+@keyframes sheetUp{
+  from{ transform: translateY(34px); opacity:.85; }
+  to{ transform: translateY(14px); opacity:1; }
+}
 
-    /* Reduce motion */
-    @media (prefers-reduced-motion: reduce){
-      .coin{ transition:none !important; }
-      .pulseCoin, .pulseText{ animation:none !important; }
-      .modal{ animation:none !important; }
-    }
+.grabber{ width:44px; height:5px; border-radius:99px; background: rgba(255,255,255,.16); margin: 2px auto 10px; }
+
+.sheetHeader{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.sheetTitle{font-size:16px; margin:0; font-weight:1000;}
+
+.iconBtn{
+  min-height: var(--tap);
+  min-width: var(--tap);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font-weight: 1000;
+  cursor:pointer;
+  transition: transform 120ms ease;
+}
+.iconBtn:active{ transform: translateY(1px) scale(.99); }
+
+.input{
+  width: 100%;
+  min-height: var(--tap);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  padding: 12px 12px;
+  outline: none;
+  font-size: 16px; /* prevent iOS zoom */
+  letter-spacing: .06em;
+}
+.input:focus{ border-color: rgba(79,209,197,.55); }
+
+.sheetActions{display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top:12px;}
+
+/* log */
+.log{ margin:0; padding:0; list-style:none; border:1px solid var(--line); border-radius: 16px; overflow:auto; max-height: 220px; -webkit-overflow-scrolling: touch; }
+.log li{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.06)}
+.log li:last-child{border-bottom:0}
+
+/* toast */
+.toast{
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(90px + var(--safeB));
+  z-index: 80;
+  display:none;
+  justify-content:center;
+  pointer-events:none;
+}
+.toast .bubble{
+  width: min(540px, 100%);
+  background: rgba(18,26,46,.98);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.45);
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: .2px;
+  animation: toastIn 170ms ease-out;
+}
+@keyframes toastIn{ from{ transform: translateY(10px); opacity:.85 } to{ transform: translateY(0); opacity:1 } }
+
+/* a11y */
+.srOnly{ position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .coin.animating, .coinRig.wobbling, .coinRig.settle{ animation:none !important; }
+  .sheet{ animation:none !important; }
+  .toast .bubble{ animation:none !important; }
+  .btn, .iconBtn{ transition:none !important; }
+}
+
   </style>
 </head>
 <body>
@@ -301,92 +352,94 @@
         <h1>CoinFlip Multiplayer</h1>
         <span id="conn" class="pill bad" aria-label="Connectivity">OFFLINE</span>
       </div>
-      <p class="hint" style="margin-top:10px">Tap <b>Room</b> to create a room. Tap <b>Link</b> to share. Your partner opens the link and joins instantly.</p>
-    </section>
+      <p class="hint" style="margin-top:10px">Tap <b>Room</b> to open the room sheet. Create or join, then flip together.</p>
+    </section><section class="card">
+  <div class="resultRow">
+    <div>
+      <div class="latestLabel">Latest result</div>
+      <div id="latest" class="latest" aria-live="polite">—</div>
+    </div>
+    <div class="roomBlock">
+      <div class="label">Room</div>
+      <div id="roomCode" class="mono roomCode">—</div>
+    </div>
+  </div>
 
-    <section class="card">
-      <div class="resultRow">
-        <div>
-          <div class="latestLabel">Latest result</div>
-          <div id="latest" class="latest" aria-live="polite">—</div>
-        </div>
-        <div class="roomBlock">
-          <div class="label">Room</div>
-          <div id="roomCode" class="mono roomCode">—</div>
+  <div class="stage">
+    <div class="coinWrap" id="coinWrap">
+      <div id="coinRig" class="coinRig" aria-label="Coin">
+        <div id="coin" class="coin" style="--restY:0deg; --fromY:0deg; --toY:0deg; --dur:1100ms;">
+          <div class="face heads"><span>HEADS</span></div>
+          <div class="face tails"><span>TAILS</span></div>
+          <div class="edge" aria-hidden="true"></div>
         </div>
       </div>
+      <div class="overlay" aria-hidden="true"><div class="txt">FLIPPING…</div></div>
+    </div>
 
-      <div class="stage">
-        <div class="coinWrap" id="coinWrap">
-          <div id="coin" class="coin" aria-label="Coin">
-            <div class="face heads"><span>HEADS</span></div>
-            <div class="face tails"><span>TAILS</span></div>
-            <div class="edge" aria-hidden="true"></div>
-          </div>
-          <div class="overlay" aria-hidden="true"><div class="txt">FLIPPING…</div></div>
-        </div>
-
-        <div class="metaRow">
-          <div>
-            <div class="label">Players</div>
-            <div id="players" class="mono metaVal">—</div>
-          </div>
-          <div style="text-align:right">
-            <div class="label">You</div>
-            <div id="you" class="mono metaVal">—</div>
-          </div>
-        </div>
-
-        <div id="status" class="hint" style="width:100%"></div>
+    <div class="metaRow">
+      <div>
+        <div class="label">Players</div>
+        <div id="players" class="mono metaVal">—</div>
       </div>
-
-      <div class="srOnly" id="ariaLive" aria-live="polite" aria-atomic="true"></div>
-    </section>
-
-    <section class="card">
-      <div class="row" style="justify-content:space-between">
-        <div class="label">Flip log (latest first)</div>
-        <div class="pill" id="verifyHint" style="padding:6px 10px">VERIFY: ON</div>
+      <div style="text-align:right">
+        <div class="label">You</div>
+        <div id="you" class="mono metaVal">—</div>
       </div>
-      <ul id="log" class="log" style="margin-top:10px"></ul>
-    </section>
-  </main>
+    </div>
 
-  <!-- Sticky action bar -->
-  <nav class="actionBar" aria-label="Actions">
+    <div id="status" class="hint" style="width:100%"></div>
+  </div>
+
+  <!-- Explicit ARIA live region -->
+  <div class="srOnly" id="ariaLive" aria-live="polite" aria-atomic="true"></div>
+</section>
+
+<section class="card">
+  <div style="display:flex; justify-content:space-between; gap:10px; align-items:center">
+    <div class="label">Flip log (latest first)</div>
+    <span class="pill" id="verifyHint" style="padding:6px 10px">SINGLE SOURCE: ON</span>
+  </div>
+  <ul id="log" class="log" style="margin-top:10px"></ul>
+  <p class="hint" style="margin-top:10px">Fairness: only one client can write a flip at a time (DB lock). Everyone renders the DB result.</p>
+</section>
+
+  </main>  <!-- sticky actions -->  <nav class="actionBar" aria-label="Actions">
     <div class="grid">
       <button id="roomBtn" class="btn primary">Room</button>
       <button id="linkBtn" class="btn" disabled>Link</button>
       <button id="flipBtn" class="btn primary" disabled>Flip</button>
       <button id="resetBtn" class="btn danger" disabled>Reset</button>
     </div>
-  </nav>
-
-  <!-- Modal: Join room / paste code -->
-  <div id="modalBackdrop" class="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal">
-      <div class="modalHeader">
-        <h2 id="modalTitle" class="modalTitle">Join a Room</h2>
-        <button id="closeModal" class="iconBtn" aria-label="Close">✕</button>
+  </nav>  <!-- bottom sheet -->  <div id="sheetBackdrop" class="sheetBackdrop" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet">
+      <div class="grabber" aria-hidden="true"></div>
+      <div class="sheetHeader">
+        <h2 id="sheetTitle" class="sheetTitle">Room</h2>
+        <button id="closeSheet" class="iconBtn" aria-label="Close">✕</button>
       </div>
-      <p class="hint" style="margin-top:8px">Paste the room code from your partner. Example: <span class="mono">a8k3x1p9</span></p>
-
-      <div style="margin-top:12px">
-        <label class="label" for="roomInput">Room code</label>
-        <input id="roomInput" class="input mono" inputmode="latin" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="Enter room code" />
-      </div>
-
-      <div class="modalActions">
-        <button id="joinBtn" class="btn primary">Join</button>
-        <button id="pasteBtn" class="btn">Paste</button>
-      </div>
-
-      <p id="modalMsg" class="hint" style="margin-top:10px"></p>
-    </div>
+      <p class="hint" style="margin-top:8px">Create a room or join by pasting a code. Link uses the current room.</p><div class="sheetActions" style="margin-top:12px">
+    <button id="createBtn" class="btn primary">Create new room</button>
+    <button id="copyBtn" class="btn" disabled>Copy invite link</button>
   </div>
 
-  <script type="module">
-    // Firebase config
+  <div style="margin-top:12px">
+    <label class="label" for="roomInput">Join with room code</label>
+    <input id="roomInput" class="input mono" inputmode="latin" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="e.g., a8k3x1p9" />
+  </div>
+
+  <div class="sheetActions">
+    <button id="joinBtn" class="btn primary">Join</button>
+    <button id="pasteBtn" class="btn">Paste</button>
+  </div>
+
+  <p id="sheetMsg" class="hint" style="margin-top:10px"></p>
+</div>
+
+  </div>  <!-- toast -->  <div id="toast" class="toast" aria-live="polite" aria-atomic="true">
+    <div class="bubble" id="toastText">—</div>
+  </div>  <script type="module">
+    // Firebase config (RTDB + Anonymous Auth required)
     const firebaseConfig = {
       apiKey: "AIzaSyAwlWUvMOBfz2pTh18MqpDsVk3Hl-xPmJQ",
       authDomain: "coinflip-97336.firebaseapp.com",
@@ -399,7 +452,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import {
       getDatabase, ref, set, push, onValue, onChildAdded, onDisconnect,
-      update, remove, get
+      update, remove, get, runTransaction
     } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
     import { getAuth, signInAnonymously, onAuthStateChanged }
       from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
@@ -415,8 +468,9 @@
       status: $("status"),
       ariaLive: $("ariaLive"),
 
-      coin: $("coin"),
       coinWrap: $("coinWrap"),
+      coinRig: $("coinRig"),
+      coin: $("coin"),
 
       roomBtn: $("roomBtn"),
       linkBtn: $("linkBtn"),
@@ -424,15 +478,18 @@
       resetBtn: $("resetBtn"),
 
       log: $("log"),
-      verifyHint: $("verifyHint"),
 
-      // Modal
-      modalBackdrop: $("modalBackdrop"),
-      closeModal: $("closeModal"),
+      sheetBackdrop: $("sheetBackdrop"),
+      closeSheet: $("closeSheet"),
+      createBtn: $("createBtn"),
+      copyBtn: $("copyBtn"),
       roomInput: $("roomInput"),
       joinBtn: $("joinBtn"),
       pasteBtn: $("pasteBtn"),
-      modalMsg: $("modalMsg"),
+      sheetMsg: $("sheetMsg"),
+
+      toast: $("toast"),
+      toastText: $("toastText"),
     };
 
     const app = initializeApp(firebaseConfig);
@@ -441,11 +498,11 @@
 
     let user = null;
     let roomId = null;
-    let selfRole = "player";
     let isReady = false;
-    let isFlipping = false;
+    let isFlippingLocal = false;
+    let toastTimer = null;
 
-    // ----- UI helpers -----
+    // ---------- UI helpers ----------
     function setStatus(msg){ ui.status.textContent = msg; }
 
     function setConn(connected){
@@ -457,11 +514,12 @@
       ui.linkBtn.disabled = !enabled;
       ui.flipBtn.disabled = !enabled;
       ui.resetBtn.disabled = !enabled;
+      ui.copyBtn.disabled = !enabled;
     }
 
     function setRoomUI(id){
       ui.roomCode.textContent = id || "—";
-      ui.linkBtn.disabled = !id;
+      enableRoomActions(!!id);
     }
 
     function inviteLink(id){
@@ -479,6 +537,13 @@
 
     function vibrate(ms=25){
       try{ if(navigator.vibrate) navigator.vibrate(ms); }catch{}
+    }
+
+    function toast(msg){
+      ui.toastText.textContent = msg;
+      ui.toast.style.display = "flex";
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { ui.toast.style.display = "none"; }, 1400);
     }
 
     // WebAudio flip sound
@@ -513,51 +578,123 @@
       }, 320);
     }
 
-    // Modal controls
-    function openModal(){
-      ui.modalMsg.textContent = "";
+    // bottom-sheet
+    function openSheet(){
+      ui.sheetMsg.textContent = "";
       ui.roomInput.value = "";
-      ui.modalBackdrop.classList.add("open");
-      // focus input (slight delay for iOS)
+      ui.sheetBackdrop.classList.add("open");
       setTimeout(() => ui.roomInput.focus(), 60);
     }
+    function closeSheet(){ ui.sheetBackdrop.classList.remove("open"); }
 
-    function closeModal(){
-      ui.modalBackdrop.classList.remove("open");
-    }
-
-    // close modal on backdrop tap
-    ui.modalBackdrop.addEventListener("click", (e) => {
-      if(e.target === ui.modalBackdrop) closeModal();
+    ui.sheetBackdrop.addEventListener("click", (e) => {
+      if(e.target === ui.sheetBackdrop) closeSheet();
     });
+    ui.closeSheet.addEventListener("click", closeSheet);
 
-    ui.closeModal.addEventListener("click", closeModal);
-
-    // ----- Crypto verify (commit-reveal) -----
-    async function sha256Hex(str){
-      const enc = new TextEncoder().encode(str);
-      const buf = await crypto.subtle.digest("SHA-256", enc);
-      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
+    // ---------- Coin animation driven by DB result ----------
+    function setRestFace(result){
+      const restY = (result === "TAILS") ? "180deg" : "0deg";
+      ui.coin.style.setProperty("--restY", restY);
+      ui.coin.style.transform = `rotateY(${restY})`;
     }
 
-    // ----- Coin animation -----
-    function showFlipping(on){ ui.coinWrap.classList.toggle("flipping", on); }
+    function playFlipAnimation(result, durMs){
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const spins = reduce ? 1 : (4 + Math.floor(Math.random()*3)); // 4–6
+      const landing = (result === "TAILS") ? 180 : 0;
 
-    function animateCoin(result){
-      const spins = 4 + Math.floor(Math.random()*3); // 4–6
-      const landing = result === "HEADS" ? 0 : 180;
-      const rotY = spins*360 + landing;
-      const jitterX = (Math.random()*18 - 9);
+      const fromY = landing;                 // start from current face
+      const toY = spins*360 + landing;       // end landing
 
-      ui.coin.style.transition = "transform 1.1s cubic-bezier(.2,.8,.2,1)";
-      ui.coin.style.transform = `rotateY(${rotY}deg) rotateX(${jitterX}deg)`;
-      setTimeout(() => {
-        ui.coin.style.transition = "transform .25s ease";
-        ui.coin.style.transform = `rotateY(${landing}deg) rotateX(0deg)`;
-      }, 1120);
+      ui.coin.style.setProperty("--dur", `${durMs}ms`);
+      ui.coin.style.setProperty("--fromY", `${fromY}deg`);
+      ui.coin.style.setProperty("--toY", `${toY}deg`);
+
+      // reset classes to restart keyframes
+      ui.coin.classList.remove("animating");
+      ui.coinRig.classList.remove("wobbling");
+      ui.coinRig.classList.remove("settle");
+      void ui.coin.offsetWidth;
+
+      ui.coin.classList.add("animating");
+      if(!reduce) ui.coinRig.classList.add("wobbling");
+
+      // At end: set rest face cleanly + settle bounce
+      window.setTimeout(() => {
+        ui.coin.classList.remove("animating");
+        ui.coinRig.classList.remove("wobbling");
+        setRestFace(result);
+        ui.coinRig.classList.add("settle");
+        window.setTimeout(() => ui.coinRig.classList.remove("settle"), 220);
+      }, durMs);
     }
 
-    // ----- Room logic -----
+    // ---------- Fairness: single source of truth via DB lock ----------
+    // Lock path: rooms/{roomId}/meta/flipLock
+    // flipLock expires quickly so stuck clients don't kill the room.
+    async function acquireFlipLock(){
+      const lockRef = ref(db, `rooms/${roomId}/meta/flipLock`);
+      const now = Date.now();
+      const ttl = 6000; // 6s (animation+network)
+
+      const tx = await runTransaction(lockRef, (cur) => {
+        if(!cur) return { by: user.uid, at: now };
+        // expired lock
+        if(cur.at && (now - cur.at) > ttl) return { by: user.uid, at: now };
+        // already owned by me (allow re-entry)
+        if(cur.by === user.uid) return { by: user.uid, at: now };
+        return; // abort
+      }, { applyLocally: false });
+
+      return tx.committed;
+    }
+
+    async function releaseFlipLock(){
+      try{ await remove(ref(db, `rooms/${roomId}/meta/flipLock`)); }catch{}
+    }
+
+    // True 50/50 using crypto
+    function fairResult(){
+      const b = new Uint8Array(1);
+      crypto.getRandomValues(b);
+      return (b[0] & 1) ? "HEADS" : "TAILS";
+    }
+
+    // DB-driven flip: only the lock holder writes the result
+    async function flipCoin(){
+      if(!roomId || !user || isFlippingLocal) return;
+
+      isFlippingLocal = true;
+
+      // feedback at flip start (everyone gets this only if they pressed Flip)
+      vibrate(25);
+      flipSound();
+
+      const gotLock = await acquireFlipLock();
+      if(!gotLock){
+        toast("Someone else is flipping…");
+        isFlippingLocal = false;
+        return;
+      }
+
+      try{
+        const at = Date.now();
+        const result = fairResult();
+
+        // write once: flip log + latest
+        const flipRef = push(ref(db, `rooms/${roomId}/flips`));
+        await set(flipRef, { result, at, by: user.uid.slice(0,8) });
+        await update(ref(db, `rooms/${roomId}/meta`), { latest: { result, at }, updatedAt: at });
+
+        // local UI will animate from DB listener too; no double-animate here.
+      } finally {
+        await releaseFlipLock();
+        isFlippingLocal = false;
+      }
+    }
+
+    // ---------- Room logic ----------
     function roomBase(id){ return ref(db, `rooms/${id}`); }
 
     async function ensureSignedIn(){
@@ -572,7 +709,6 @@
       if(!isReady) return;
       const id = randId(8);
       roomId = id;
-      selfRole = "host";
 
       await set(roomBase(id), {
         meta: { createdAt: Date.now(), updatedAt: Date.now(), latest: null },
@@ -580,6 +716,7 @@
         flips: {}
       });
       await joinRoom(id);
+      toast("Room created");
       setStatus("Room created. Tap Link to share.");
     }
 
@@ -596,57 +733,68 @@
 
       roomId = id;
       setRoomUI(id);
-      enableRoomActions(true);
       location.hash = `#room=${id}`;
 
+      // presence
       const playerRef = ref(db, `rooms/${id}/players/${user.uid}`);
-      await set(playerRef, { joinedAt: Date.now(), role: selfRole, nick: user.uid.slice(0,8) });
+      await set(playerRef, { joinedAt: Date.now(), nick: user.uid.slice(0,8) });
       onDisconnect(playerRef).remove();
 
+      // players
       onValue(ref(db, `rooms/${id}/players`), (s) => {
         const v = s.val() || {};
         const list = Object.values(v).map(p=>p.nick);
         ui.players.textContent = list.length ? `${list.length} (${list.join(", ")})` : "—";
       });
 
+      // latest result listener: SINGLE SOURCE OF TRUTH
       onValue(ref(db, `rooms/${id}/meta/latest`), (s) => {
         const v = s.val();
         if(!v?.result) return;
+
         ui.latest.textContent = v.result;
         ui.ariaLive.textContent = `Latest result ${v.result}`;
-        animateCoin(v.result);
+
+        // run keyframe animation + overlay and pulse
+        ui.coin.classList.add("animating");
+        playFlipAnimation(v.result, 1100);
         pulse();
       });
 
+      // log
       ui.log.innerHTML = "";
-      onChildAdded(ref(db, `rooms/${id}/flips`), async (s) => {
+      onChildAdded(ref(db, `rooms/${id}/flips`), (s) => {
         const v = s.val();
         if(!v) return;
         const stamp = new Date(v.at || Date.now()).toLocaleString();
-        let verify = "";
-        if(v.commit && v.nonce && v.result){
-          const check = await sha256Hex(`${v.nonce}|${v.result}`);
-          verify = (check === v.commit) ? "✅" : "❌";
-        }
         const li = document.createElement("li");
         li.innerHTML = `
           <div style="display:flex; justify-content:space-between; gap:10px; align-items:center">
-            <div class="mono" style="font-weight:950">${v.result || "(pending)"}</div>
-            <div class="mono" style="font-weight:950">${verify}</div>
+            <div class="mono" style="font-weight:1000">${v.result}</div>
+            <div class="mono" style="font-weight:1000">${v.by || "—"}</div>
           </div>
-          <div class="label" style="margin-top:4px">${stamp} • by ${v.by || "—"}</div>
+          <div class="label" style="margin-top:4px">${stamp}</div>
         `;
         ui.log.prepend(li);
         while(ui.log.children.length > 20) ui.log.removeChild(ui.log.lastChild);
       });
 
+      // set rest face if there is an existing latest
+      const latestSnap = await get(ref(db, `rooms/${id}/meta/latest`));
+      if(latestSnap.exists() && latestSnap.val()?.result){
+        setRestFace(latestSnap.val().result);
+      }else{
+        setRestFace("HEADS");
+      }
+
       setStatus("Joined. Tap Flip.");
+      toast("Joined room");
     }
 
     async function copyInvite(){
       if(!roomId) return;
       const link = inviteLink(roomId);
-      try{ await navigator.clipboard.writeText(link); setStatus("Invite link copied."); }
+      try{ await navigator.clipboard.writeText(link); toast("Link copied"); setStatus("Invite link copied."); }
       catch{ prompt("Copy this link:", link); }
     }
 
@@ -657,95 +805,47 @@
       ui.latest.textContent = "—";
       ui.ariaLive.textContent = "Latest result cleared";
       ui.log.innerHTML = "";
-      ui.coin.style.transform = "rotateY(0deg)";
+      setRestFace("HEADS");
+      toast("Room reset");
       setStatus("Room reset.");
     }
 
-    async function flipCoin(){
-      if(!roomId || !user || isFlipping) return;
-
-      isFlipping = true;
-      showFlipping(true);
-      vibrate(25);
-      flipSound();
-
-      const result = Math.random() < 0.5 ? "HEADS" : "TAILS";
-      const at = Date.now();
-      const nonce = crypto.getRandomValues(new Uint32Array(4)).join("-");
-      const commit = await sha256Hex(`${nonce}|${result}`);
-
-      const flipRef = push(ref(db, `rooms/${roomId}/flips`));
-      await set(flipRef, { status:"commit", commit, by: user.uid.slice(0,8), at });
-
-      animateCoin(result);
-
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const revealDelay = reduce ? 60 : 1100;
-
-      setTimeout(async () => {
-        await update(flipRef, { status:"reveal", result, nonce });
-        await update(ref(db, `rooms/${roomId}/meta`), { latest: { result, at }, updatedAt: at });
-
-        ui.latest.textContent = result;
-        ui.ariaLive.textContent = `Latest result ${result}`;
-        pulse();
-
-        showFlipping(false);
-        isFlipping = false;
-      }, revealDelay);
-    }
-
-    // ----- Modal actions -----
+    // ----- sheet actions -----
     async function pasteRoomCode(){
-      ui.modalMsg.textContent = "";
+      ui.sheetMsg.textContent = "";
       try{
         const txt = await navigator.clipboard.readText();
         ui.roomInput.value = (txt || "").trim().replace(/^#?room=/i, "");
-        ui.modalMsg.textContent = ui.roomInput.value ? "Pasted." : "Clipboard is empty.";
+        ui.sheetMsg.textContent = ui.roomInput.value ? "Pasted." : "Clipboard is empty.";
       }catch{
-        ui.modalMsg.textContent = "Clipboard paste blocked. Paste manually.";
+        ui.sheetMsg.textContent = "Clipboard paste blocked. Paste manually.";
       }
     }
 
-    async function joinFromModal(){
+    async function joinFromSheet(){
       const id = ui.roomInput.value.trim().toLowerCase();
-      if(!id){ ui.modalMsg.textContent = "Enter a room code."; return; }
-      selfRole = "player";
+      if(!id){ ui.sheetMsg.textContent = "Enter a room code."; return; }
       await joinRoom(id);
-      if(roomId) closeModal();
+      if(roomId) closeSheet();
     }
 
+    ui.createBtn.addEventListener("click", createRoom);
+    ui.copyBtn.addEventListener("click", copyInvite);
     ui.pasteBtn.addEventListener("click", pasteRoomCode);
-    ui.joinBtn.addEventListener("click", joinFromModal);
+    ui.joinBtn.addEventListener("click", joinFromSheet);
 
     ui.roomInput.addEventListener("keydown", (e) => {
-      if(e.key === "Enter") joinFromModal();
-      if(e.key === "Escape") closeModal();
+      if(e.key === "Enter") joinFromSheet();
+      if(e.key === "Escape") closeSheet();
     });
 
-    // ----- Bottom bar buttons -----
-    ui.roomBtn.addEventListener("click", () => {
-      // If already in a room, tapping Room opens modal to join another room.
-      // This is deliberate: thumb UX.
-      if(roomId){ openModal(); }
-      else createRoom();
-    });
-
+    // ----- bottom bar -----
+    ui.roomBtn.addEventListener("click", openSheet);
     ui.linkBtn.addEventListener("click", copyInvite);
     ui.flipBtn.addEventListener("click", flipCoin);
     ui.resetBtn.addEventListener("click", resetRoom);
 
-    // Also allow long-press behavior substitute: double-tap Room to open modal even if not in room
-    let lastTap = 0;
-    ui.roomBtn.addEventListener("touchend", () => {
-      const now = Date.now();
-      if(now - lastTap < 320){
-        openModal();
-      }
-      lastTap = now;
-    }, {passive:true});
-
-    // ----- Boot -----
+    // ----- boot -----
     enableRoomActions(false);
     setStatus("Loading…");
 
@@ -754,28 +854,19 @@
     await ensureSignedIn();
     isReady = true;
 
-    // Auto-join by hash
     const m = (location.hash || "").match(/room=([a-z0-9]{4,20})/i);
     if(m){
       await joinRoom(m[1]);
+      toast("Auto-joined");
     }else{
-      setStatus("Ready. Tap Room to create one.");
+      setStatus("Ready. Tap Room.");
     }
 
-    ui.verifyHint.textContent = "VERIFY: ON";
-
-    // Keyboard shortcut (desktop testing): J to open join modal
-    window.addEventListener("keydown", (e) => {
-      if(e.key.toLowerCase() === "j") openModal();
-    });
-
-  </script>
-
-  <!--
+  </script>  <!--
   =========================
   FIREBASE RULES (IMPORTANT)
   =========================
-  Realtime Database Rules:
+  Realtime Database Rules (minimum viable):
 
   {
     "rules": {
@@ -791,9 +882,18 @@
     }
   }
 
-  Notes:
-  - You MUST enable Anonymous Auth or you'll get auth/configuration-not-found.
-  - Commit-reveal verification is cheat-resistant, not cheat-proof.
-  -->
-</body>
+  =========================
+  WHY “ALWAYS HEADS” HAPPENS
+  =========================
+  In your earlier versions, the *writer* and the *renderer* were mixed:
+  - multiple clients could generate their own result (race condition),
+  - or the UI always started/settled at 0deg (HEADS) even when TAILS was stored.
+
+  Fix here:
+  1) Single source of truth: ONLY the database latest.result decides what is shown.
+  2) Flip lock: runTransaction() on meta/flipLock ensures only one client writes a flip.
+  3) Visual correctness: rest face is set to 0deg for HEADS, 180deg for TAILS.
+
+  This makes outcomes consistent across players and stops the “looks like heads” bug.
+  --></body>
 </html>
