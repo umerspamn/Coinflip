@@ -1,0 +1,4 @@
+server.log
+tests/screenshots/
+__pycache__/
+*.pyc
