@@ -505,6 +505,16 @@
                     ui.overlay.text.innerText = d.text;
                     ui.overlay.from.innerText = d.fromNick;
                     ui.overlay.el.classList.add('visible');
+
+                    // Only the sender (winner) can mark it as done
+                    if(d.fromUid === currentUser.uid) {
+                        ui.btns.doneDare.style.display = 'block';
+                        ui.btns.doneDare.innerText = "MARK COMPLETED";
+                    } else {
+                        ui.btns.doneDare.style.display = 'none';
+                        // Optionally show a waiting message
+                        // For now, hiding the button is sufficient, the overlay blocks interaction
+                    }
                 } else {
                     ui.overlay.el.classList.remove('visible');
                 }
@@ -683,7 +693,8 @@
             
             set(ref(db, `rooms/${currentRoomId}/activeDare`), {
                 text: text,
-                fromNick: myName
+                fromNick: myName,
+                fromUid: currentUser.uid
             });
             ui.inputs.dare.value = "";
         }
