@@ -8,399 +8,277 @@
     <meta name="description" content="Multiplayer Coin Flip with Dares">
 
     <style>
-        /* --- Reset & Base --- */
+        /* --- Reset & Variables --- */
         :root {
-            --bg-color: #121212;
-            --surface-color: #1e1e1e;
-            --surface-highlight: #2c2c2c;
-            --primary-color: #bb86fc;
-            --secondary-color: #03dac6;
-            --error-color: #cf6679;
-            --text-main: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --radius-lg: 20px;
-            --radius-md: 12px;
-            --spacing-unit: 8px;
-            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-            --font-mono: "SF Mono", "Monaco", "Inconsolata", "Fira Mono", "Droid Sans Mono", "Source Code Pro", monospace;
-            --coin-size: 160px;
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --surface-light: #2c2c2c;
+            --primary: #bb86fc;
+            --secondary: #03dac6;
+            --error: #cf6679;
+            --text: #e0e0e0;
+            --text-dim: #a0a0a0;
+            --radius: 16px;
+            --coin-size: 150px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             margin: 0; padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: var(--font-main);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            background-color: var(--bg); color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
 
         /* --- Screens --- */
         .screen {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s ease;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            background: var(--bg); z-index: 10;
         }
-        .screen.hidden { transform: translateX(100%); pointer-events: none; }
-        .screen.active { transform: translateX(0); }
+        .screen.hidden { transform: translateY(100%); opacity: 0; pointer-events: none; z-index: 0; }
+        .screen.active { transform: translateY(0); opacity: 1; z-index: 20; }
 
         /* --- Start Screen --- */
-        #startScreen {
-            background: var(--bg-color);
-            z-index: 200;
-            justify-content: center;
-            align-items: center;
-            padding: 30px;
-        }
+        #startScreen { justify-content: center; align-items: center; padding: 20px; }
         .start-card {
-            background: var(--surface-color);
-            padding: 30px;
-            border-radius: var(--radius-lg);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            background: var(--surface); padding: 40px 30px;
+            border-radius: 24px; width: 100%; max-width: 380px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .start-title {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--primary-color);
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            font-size: 2rem; font-weight: 900; color: var(--primary);
+            margin-bottom: 30px; letter-spacing: 1px; text-transform: uppercase;
         }
-        .name-input {
-            width: 100%;
-            padding: 16px;
-            background: var(--bg-color);
-            border: 2px solid var(--surface-highlight);
-            border-radius: var(--radius-md);
-            color: white;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            text-align: center;
+        .input-lg {
+            width: 100%; padding: 16px; background: var(--bg);
+            border: 2px solid var(--surface-light); border-radius: 12px;
+            color: white; font-size: 1.2rem; text-align: center; margin-bottom: 20px;
         }
-        .name-input:focus { border-color: var(--primary-color); outline: none; }
-
+        .input-lg:focus { border-color: var(--primary); outline: none; }
+        
         /* --- Game Layout --- */
-        .app-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: var(--spacing-unit);
-            overflow-y: auto;
-            max-width: 600px;
-            margin: 0 auto;
-            width: 100%;
-            padding-bottom: 140px;
+        header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; }
+        
+        .main-scroll {
+            flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 120px;
+            max-width: 600px; margin: 0 auto; width: 100%;
         }
 
-        /* --- Header --- */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 4px;
-        }
-        h1 { margin: 0; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; }
-        .status-pill {
-            font-size: 0.75rem;
-            font-weight: 700;
-            background: var(--surface-color);
-            padding: 4px 10px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--error-color); }
-        .status-pill.connected .status-dot { background-color: var(--secondary-color); }
-
-        /* --- Panels --- */
         .panel {
-            background: var(--surface-color);
-            border-radius: var(--radius-lg);
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            background: var(--surface); border-radius: var(--radius);
+            padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
 
-        /* --- Info Panel --- */
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px;
-            font-size: 0.9rem;
-            align-items: center;
+        /* --- Player Chips & Info --- */
+        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .room-badge { 
+            display: flex; align-items: center; gap: 8px; background: var(--surface-light);
+            padding: 4px 8px 4px 12px; border-radius: 20px; font-family: monospace; font-size: 1rem; color: var(--secondary);
         }
-        .code-wrapper { display: flex; align-items: center; gap: 10px; }
-        .info-value { font-family: var(--font-mono); font-weight: 600; color: var(--secondary-color); font-size: 1.1rem;}
-        
-        .icon-btn {
-            background: rgba(3, 218, 198, 0.15);
-            border: 1px solid rgba(3, 218, 198, 0.3);
-            color: var(--secondary-color);
-            cursor: pointer;
-            width: 36px; height: 36px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 8px;
-            padding: 0;
+        .copy-btn {
+            background: none; border: none; color: white; cursor: pointer; padding: 4px; display: flex;
         }
         
-        .player-list {
-            grid-column: span 2;
-            margin-top: 12px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+        .player-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+        .p-chip {
+            font-size: 0.8rem; padding: 5px 10px; border-radius: 10px; background: var(--surface-light);
+            border: 1px solid transparent; opacity: 0.7; transition: all 0.3s;
         }
-        .player-chip {
-            background: var(--surface-highlight);
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            display: flex; align-items: center; gap: 6px;
-            border: 1px solid transparent;
-        }
-        .player-chip.is-flipper {
-            border-color: var(--primary-color);
-            background: rgba(187, 134, 252, 0.1);
-        }
-        .player-chip .crown { color: var(--primary-color); font-size: 0.9em; }
+        .p-chip.active { opacity: 1; border-color: var(--primary); background: rgba(187, 134, 252, 0.15); font-weight: bold; }
+        .p-chip.me { color: var(--secondary); }
 
-        /* --- Coin Section --- */
-        .coin-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px 0;
-            position: relative;
-            min-height: 240px;
+        /* --- Coin --- */
+        .coin-stage {
+            height: 220px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; position: relative;
         }
-        .coin-container {
-            width: var(--coin-size);
-            height: var(--coin-size);
-            perspective: 1000px;
-            margin-bottom: 20px;
+        .coin-scene { width: var(--coin-size); height: var(--coin-size); perspective: 1000px; }
+        .coin-obj {
+            width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
         }
-        .coin {
-            width: 100%; height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
+        .face {
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 3rem; font-weight: 900; border: 4px solid #DAA520;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
         }
-        .coin-face {
-            position: absolute;
-            width: 100%; height: 100%;
-            backface-visibility: hidden;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 3rem; font-weight: bold;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.4);
-            background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b);
-            color: #4a3b00;
-            border: 4px solid #DAA520;
-        }
-        .coin-face.tails { transform: rotateY(180deg); background: radial-gradient(circle at 30% 30%, #c0c0c0, #808080); color: #333; border-color: #A9A9A9; }
+        .face.front { background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b); color: #5a4a00; transform: rotateY(0deg); }
+        .face.back { background: radial-gradient(circle at 30% 30%, #e0e0e0, #909090); color: #333; transform: rotateY(180deg); border-color: #a0a0a0; }
 
-        .result-display {
-            font-size: 22px; font-weight: 800; letter-spacing: 2px;
-            min-height: 1.5em; text-align: center; color: var(--text-main);
+        .result-text {
+            font-size: 1.5rem; font-weight: 800; letter-spacing: 3px; min-height: 1.5em;
+            margin-top: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
-        .result-display.glow { color: var(--secondary-color); text-shadow: 0 0 10px var(--secondary-color); }
-        .turn-indicator { font-size: 0.9rem; color: var(--text-muted); margin-top: 5px; min-height: 1.2em;}
-        .turn-indicator.your-turn { color: var(--primary-color); font-weight: bold; }
+        .turn-text { font-size: 0.9rem; color: var(--text-dim); margin-top: 4px; font-weight: 500; }
+        .turn-text.my-turn { color: var(--primary); animation: pulseText 2s infinite; }
 
-        /* --- Predictions --- */
-        .prediction-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 12px;
+        /* --- Controls --- */
+        .pred-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .btn-opt {
+            padding: 14px; background: var(--surface-light); border: 2px solid transparent;
+            color: var(--text); border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
         }
-        .pred-btn {
-            background: var(--surface-highlight);
-            border: 2px solid transparent;
-            color: var(--text-main);
-            padding: 16px;
-            border-radius: var(--radius-md);
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
+        .btn-opt.selected { border-color: var(--secondary); background: rgba(3, 218, 198, 0.1); color: var(--secondary); }
+        
+        .dare-panel { flex: 1; display: flex; flex-direction: column; min-height: 120px; }
+        .dare-input-row { display: flex; gap: 8px; margin-top: auto; }
+        .inp-dare {
+            flex: 1; background: var(--bg); border: 1px solid var(--surface-light);
+            border-radius: 8px; padding: 10px; color: white;
         }
-        .pred-btn.selected {
-            background: rgba(3, 218, 198, 0.15);
-            border-color: var(--secondary-color);
-            color: var(--secondary-color);
+        .btn-send {
+            background: var(--secondary); color: black; border: none; font-weight: 800;
+            padding: 0 16px; border-radius: 8px; cursor: pointer;
         }
-
-        /* --- Dares --- */
-        .dare-header { font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; }
-        .dare-status { font-size: 0.75rem; color: var(--text-muted); }
-        .dare-status.success { color: var(--secondary-color); }
-        .dare-input-group { display: flex; gap: 8px; }
-        .dare-input {
-            flex: 1; background: var(--bg-color); border: 1px solid var(--surface-highlight);
-            border-radius: 8px; padding: 12px; color: white;
-        }
-        .dare-send-btn {
-            background: var(--secondary-color); color: #000; border: none;
-            border-radius: 8px; padding: 0 20px; font-weight: 700; cursor: pointer;
-        }
-        .dare-send-btn:disabled { background: var(--surface-highlight); color: var(--text-muted); opacity: 0.5; }
+        .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* --- Bottom Bar --- */
-        .bottom-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: var(--surface-color); padding: 12px;
-            display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto;
-            gap: 10px; box-shadow: 0 -4px 10px rgba(0,0,0,0.3); z-index: 100;
-            max-width: 600px; margin: 0 auto;
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: var(--surface); padding: 12px;
+            display: grid; grid-template-columns: auto auto 1fr; gap: 8px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.4); max-width: 600px; left: 50%; transform: translateX(-50%);
         }
-        .action-btn {
-            height: 52px; border: none; border-radius: var(--radius-md);
-            font-weight: 700; font-size: 1rem; cursor: pointer;
+        .nav-btn {
+            height: 50px; border-radius: 10px; border: none; font-weight: 700;
+            cursor: pointer; padding: 0 16px; font-size: 0.9rem;
         }
-        .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .btn-primary { background: var(--primary-color); color: #000; }
-        .btn-secondary { background: var(--surface-highlight); color: var(--text-main); }
-        .btn-danger { background: rgba(207, 102, 121, 0.2); color: var(--error-color); }
+        .btn-act { background: var(--surface-light); color: var(--text); }
+        .btn-flip { background: var(--primary); color: #000; font-size: 1.1rem; }
+        .btn-flip:disabled { opacity: 0.4; cursor: not-allowed; background: var(--surface-light); color: var(--text-dim); }
 
-        /* --- Active Dare Overlay --- */
-        #activeDareOverlay {
+        /* --- Overlays --- */
+        .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 9999;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            padding: 40px; text-align: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            background: rgba(0,0,0,0.92); z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 40px; text-align: center;
         }
-        #activeDareOverlay.visible { opacity: 1; pointer-events: auto; }
-        .overlay-title { color: var(--error-color); font-size: 1.5rem; font-weight: 900; margin-bottom: 20px; letter-spacing: 3px; }
-        .overlay-text { color: white; font-size: 2rem; font-weight: 700; margin-bottom: 40px; line-height: 1.4; }
-        .overlay-btn {
-            background: white; color: black; border: none;
-            padding: 16px 32px; font-size: 1.2rem; font-weight: 800;
-            border-radius: 50px; cursor: pointer; transform: scale(1);
-            animation: pulse 2s infinite;
+        .overlay.visible { opacity: 1; pointer-events: auto; }
+        .dare-big-title { color: var(--error); font-size: 1.2rem; font-weight: 900; letter-spacing: 4px; margin-bottom: 20px; }
+        .dare-big-text { font-size: 1.8rem; font-weight: 700; line-height: 1.4; margin-bottom: 30px; }
+        .btn-done {
+            background: white; color: black; border: none; padding: 15px 40px;
+            border-radius: 50px; font-weight: 900; font-size: 1.1rem; cursor: pointer;
+            transform: scale(1); animation: pulseBtn 2s infinite;
         }
 
-        /* --- Toasts --- */
-        .toast-container {
-            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-            z-index: 300; display: flex; flex-direction: column; gap: 8px; width: 90%; max-width: 350px; pointer-events: none;
+        .toast-box {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; gap: 10px; z-index: 200; width: 90%; max-width: 350px; pointer-events: none;
         }
         .toast {
-            background: var(--surface-color); color: white; padding: 12px 16px; border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.9rem; text-align: center;
-            border-left: 4px solid var(--text-muted); opacity: 0; animation: toastIn 0.3s forwards;
+            background: var(--surface); color: white; padding: 12px 16px; border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; font-size: 0.9rem;
+            animation: slideDown 0.3s ease-out; border-left: 4px solid var(--text-dim);
         }
-        .toast.success { border-color: var(--secondary-color); }
-        .toast.error { border-color: var(--error-color); }
+        .toast.success { border-color: var(--secondary); }
+        .toast.error { border-color: var(--error); }
 
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        @keyframes toastIn { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseText { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes pulseBtn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <!-- START SCREEN -->
-    <div id="startScreen" class="screen active">
-        <div class="start-card">
-            <div class="start-title">Coin Flip Dare</div>
-            <input type="text" id="nameInput" class="name-input" placeholder="Enter Your Name" maxlength="12">
-            <button class="action-btn btn-primary" onclick="enterGame()" style="width:100%">ENTER ROOM</button>
+    <!-- --- START SCREEN --- -->
+    <div id="screenStart" class="screen active">
+        <div id="startScreen">
+            <div class="start-card">
+                <div class="start-title">Coin Flip Dare</div>
+                <input type="text" id="inpName" class="input-lg" placeholder="Enter Your Nickname" maxlength="12">
+                <button id="btnEnter" class="nav-btn btn-flip" style="width:100%">ENTER ROOM</button>
+            </div>
         </div>
     </div>
 
-    <!-- GAME SCREEN -->
-    <div id="gameScreen" class="screen hidden">
-        <header style="max-width: 600px; margin: 0 auto; width: 100%; padding: 12px 16px;">
-            <h1>Coin Flip Dare</h1>
-            <div id="connStatus" class="status-pill">
-                <div class="status-dot"></div>
-                <span id="connText">OFFLINE</span>
-            </div>
+    <!-- --- GAME SCREEN --- -->
+    <div id="screenGame" class="screen hidden">
+        <header>
+            <div class="logo">COIN FLIP DARE</div>
+            <div id="statusDot" style="width:10px; height:10px; border-radius:50%; background:var(--error);"></div>
         </header>
 
-        <div class="app-container">
-            <!-- Info Panel -->
+        <div class="main-scroll">
+            <!-- Room & Players -->
             <div class="panel">
-                <div class="info-grid">
-                    <div class="code-wrapper">
-                        <span class="info-label">CODE:</span>
-                        <span id="roomCodeDisplay" class="info-value">----</span>
-                        <button class="icon-btn" onclick="copyInviteLink()">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                <div class="info-row">
+                    <div class="room-badge">
+                        CODE: <span id="dispCode">----</span>
+                        <button class="copy-btn" id="btnCopyLink" title="Copy Link">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                         </button>
                     </div>
-                    <div class="info-value" id="myNickDisplay">...</div>
+                    <div style="font-size:0.9rem; color:var(--text-dim);">Players: <span id="dispCount">0</span></div>
                 </div>
-                <div class="player-list" id="playerList"></div>
+                <div class="player-grid" id="listPlayers"></div>
             </div>
 
-            <!-- Coin Area -->
-            <div class="coin-section">
-                <div class="coin-container">
-                    <div class="coin" id="coin">
-                        <div class="coin-face">H</div>
-                        <div class="coin-face tails">T</div>
+            <!-- Coin -->
+            <div class="coin-stage">
+                <div class="coin-scene">
+                    <div class="coin-obj" id="elCoin">
+                        <div class="face front">H</div>
+                        <div class="face back">T</div>
                     </div>
                 </div>
-                <div id="resultText" class="result-display">WAITING...</div>
-                <div id="turnIndicator" class="turn-indicator">Waiting for game data...</div>
+                <div class="result-text" id="dispResult">WAITING...</div>
+                <div class="turn-text" id="dispTurn">Loading game data...</div>
             </div>
 
             <!-- Predictions -->
             <div class="panel">
-                <div class="dare-header"><span>PREDICTION</span></div>
-                <div class="prediction-buttons">
-                    <button class="pred-btn" id="btnPredHeads" onclick="setPrediction('HEADS')">HEADS</button>
-                    <button class="pred-btn" id="btnPredTails" onclick="setPrediction('TAILS')">TAILS</button>
+                <div class="info-row" style="margin-bottom:8px">
+                    <span style="font-weight:700; font-size:0.8rem; color:var(--text-dim);">PREDICTION</span>
+                </div>
+                <div class="pred-grid">
+                    <button class="btn-opt" id="btnPredH">HEADS</button>
+                    <button class="btn-opt" id="btnPredT">TAILS</button>
                 </div>
             </div>
 
-            <!-- Dares -->
-            <div class="panel">
-                <div class="dare-header">
-                    <span>DARE CHAT</span>
-                    <span id="dareEligibility" class="dare-status">Winners send dares</span>
+            <!-- Dare Chat -->
+            <div class="panel dare-panel">
+                <div class="info-row">
+                    <span style="font-weight:700; font-size:0.8rem; color:var(--text-dim);">DARE CHAT</span>
+                    <span id="dispEligible" style="font-size:0.7rem; color:var(--text-dim);">Winners can dare</span>
                 </div>
-                <div class="dare-input-group">
-                    <input type="text" id="dareInput" class="dare-input" placeholder="Enter dare..." disabled>
-                    <button id="btnSendDare" class="dare-send-btn" onclick="sendDare()" disabled>SEND</button>
+                <div class="dare-input-row">
+                    <input type="text" id="inpDare" class="inp-dare" placeholder="Enter a dare..." disabled>
+                    <button id="btnSendDare" class="btn-send" disabled>SEND</button>
                 </div>
             </div>
         </div>
 
-        <div class="bottom-bar">
-            <button class="action-btn btn-secondary" onclick="resetRoom()">RESET</button>
-            <button class="action-btn btn-secondary" onclick="copyInviteLink()">LINK</button>
-            <button class="action-btn btn-primary" id="btnFlip" onclick="triggerFlip()" disabled style="grid-column: span 2">FLIP COIN</button>
+        <div class="bottom-nav">
+            <button class="nav-btn btn-act" id="btnReset">RESET</button>
+            <button class="nav-btn btn-act" id="btnCopyBtm">LINK</button>
+            <button class="nav-btn btn-flip" id="btnFlip" disabled>FLIP COIN</button>
         </div>
     </div>
 
-    <!-- Active Dare Overlay -->
-    <div id="activeDareOverlay">
-        <div class="overlay-title">ACTIVE DARE</div>
-        <div class="overlay-text" id="overlayDareText">Loading...</div>
-        <div style="font-size: 0.9rem; color: #ccc; margin-bottom: 20px;">From: <span id="overlaySender"></span></div>
-        <button class="overlay-btn" onclick="completeDare()">COMPLETED</button>
+    <!-- --- OVERLAY --- -->
+    <div id="overlayDare" class="overlay">
+        <div class="dare-big-title">ACTIVE DARE</div>
+        <div class="dare-big-text" id="overlayText">...</div>
+        <div style="color:#aaa; margin-bottom:30px;">From: <span id="overlayFrom"></span></div>
+        <button class="btn-done" id="btnDoneDare">MARK COMPLETED</button>
     </div>
 
-    <div class="toast-container" id="toastContainer"></div>
+    <div class="toast-box" id="toastBox"></div>
 
     <script type="module">
+        // --- Imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getDatabase, ref, set, onValue, runTransaction, serverTimestamp, onDisconnect, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // --- Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyAwlWUvMOBfz2pTh18MqpDsVk3Hl-xPmJQ",
             authDomain: "coinflip-97336.firebaseapp.com",
@@ -412,394 +290,467 @@
             measurementId: "G-D45WX8RGCW"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
-
         // --- State ---
+        let app, auth, db;
         let currentUser = null;
         let myName = "";
         let currentRoomId = null;
-        let currentFlipCount = 0;
-        let lastResult = null;
-        let currentCoinRotation = 0;
-        let isFlippingAnim = false;
-        let myPrediction = null; // Track local prediction state
-        let currentFlipperId = null; // Who's turn is it?
-
-        // --- UI ---
-        const ui = {
-            start: document.getElementById('startScreen'),
-            game: document.getElementById('gameScreen'),
-            nameIn: document.getElementById('nameInput'),
-            roomCode: document.getElementById('roomCodeDisplay'),
-            myNick: document.getElementById('myNickDisplay'),
-            playerList: document.getElementById('playerList'),
-            coin: document.getElementById('coin'),
-            resultText: document.getElementById('resultText'),
-            turnIndicator: document.getElementById('turnIndicator'),
-            btnHeads: document.getElementById('btnPredHeads'),
-            btnTails: document.getElementById('btnPredTails'),
-            dareInput: document.getElementById('dareInput'),
-            btnSendDare: document.getElementById('btnSendDare'),
-            dareElig: document.getElementById('dareEligibility'),
-            btnFlip: document.getElementById('btnFlip'),
-            overlay: document.getElementById('activeDareOverlay'),
-            overlayText: document.getElementById('overlayDareText'),
-            overlaySender: document.getElementById('overlaySender')
+        
+        // Game State
+        let gameState = {
+            count: 0,
+            flipperId: null,
+            players: [],
+            lastResult: null
+        };
+        
+        let localState = {
+            coinRotation: 0,
+            isFlipping: false,
+            myPrediction: null
         };
 
-        // --- Startup Flow ---
-        
-        // Restore name
-        const savedName = localStorage.getItem('cf_name');
-        if(savedName) ui.nameIn.value = savedName;
+        // --- UI Refs ---
+        const ui = {
+            screens: { start: document.getElementById('screenStart'), game: document.getElementById('screenGame') },
+            inputs: { name: document.getElementById('inpName'), dare: document.getElementById('inpDare') },
+            btns: { 
+                enter: document.getElementById('btnEnter'), 
+                flip: document.getElementById('btnFlip'),
+                reset: document.getElementById('btnReset'),
+                copy1: document.getElementById('btnCopyLink'),
+                copy2: document.getElementById('btnCopyBtm'),
+                predH: document.getElementById('btnPredH'),
+                predT: document.getElementById('btnPredT'),
+                sendDare: document.getElementById('btnSendDare'),
+                doneDare: document.getElementById('btnDoneDare')
+            },
+            disp: {
+                code: document.getElementById('dispCode'),
+                list: document.getElementById('listPlayers'),
+                count: document.getElementById('dispCount'),
+                coin: document.getElementById('elCoin'),
+                result: document.getElementById('dispResult'),
+                turn: document.getElementById('dispTurn'),
+                elig: document.getElementById('dispEligible'),
+                dot: document.getElementById('statusDot')
+            },
+            overlay: {
+                el: document.getElementById('overlayDare'),
+                text: document.getElementById('overlayText'),
+                from: document.getElementById('overlayFrom')
+            }
+        };
 
-        window.enterGame = function() {
-            const name = ui.nameIn.value.trim();
-            if(name.length < 1) return showToast("Enter a name first", "error");
+        // --- Initialization ---
+        function init() {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getDatabase(app);
+                
+                // Restore Name
+                const saved = localStorage.getItem('cf_name');
+                if(saved) ui.inputs.name.value = saved;
+
+                // Setup Listeners
+                ui.btns.enter.addEventListener('click', handleEnter);
+                ui.btns.flip.addEventListener('click', handleFlip);
+                ui.btns.reset.addEventListener('click', handleReset);
+                ui.btns.copy1.addEventListener('click', copyLink);
+                ui.btns.copy2.addEventListener('click', copyLink);
+                ui.btns.predH.addEventListener('click', () => makePred('HEADS'));
+                ui.btns.predT.addEventListener('click', () => makePred('TAILS'));
+                ui.btns.sendDare.addEventListener('click', handleSendDare);
+                ui.btns.doneDare.addEventListener('click', handleDoneDare);
+
+            } catch (e) {
+                toast("Firebase Error: " + e.message, "error");
+            }
+        }
+
+        // --- Auth & Room Entry ---
+        async function handleEnter() {
+            const name = ui.inputs.name.value.trim();
+            if(!name) return toast("Please enter a name", "error");
             
             myName = name;
             localStorage.setItem('cf_name', name);
-            
-            ui.start.classList.add('hidden');
-            ui.game.classList.remove('hidden');
-            ui.game.classList.add('active');
-            
-            initFirebase();
-        };
+            ui.btns.enter.disabled = true;
+            ui.btns.enter.innerText = "CONNECTING...";
 
-        function initFirebase() {
-            signInAnonymously(auth).catch(e => showToast(e.message, "error"));
-            onAuthStateChanged(auth, async (user) => {
-                if(user) {
-                    currentUser = user;
-                    ui.myNick.innerText = myName;
-                    
-                    // Connected status
-                    onValue(ref(db, ".info/connected"), (snap) => {
-                        const s = document.getElementById('connStatus');
-                        const t = document.getElementById('connText');
-                        if(snap.val()){ s.classList.add('connected'); t.innerText="CONNECTED"; }
-                        else { s.classList.remove('connected'); t.innerText="OFFLINE"; }
-                    });
-
-                    // Room Logic
-                    const url = new URL(window.location.href);
-                    let code = url.searchParams.get("room");
-                    
-                    if(!code) {
-                        const arr = new Uint8Array(3); crypto.getRandomValues(arr);
-                        code = Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
-                        url.searchParams.set("room", code);
-                        window.history.replaceState({}, '', url);
-                    }
-                    
-                    joinRoom(code);
-                }
-            });
-        }
-
-        function joinRoom(code) {
-            currentRoomId = code;
-            ui.roomCode.innerText = code;
-            
-            const userRef = ref(db, `rooms/${code}/players/${currentUser.uid}`);
-            set(userRef, { nick: myName, joinedAt: serverTimestamp(), online: true });
-            onDisconnect(userRef).remove();
-
-            // Setup Listeners
-            setupRoomListeners(code);
-        }
-
-        function setupRoomListeners(rid) {
-            // 1. Players & Turn Management
-            onValue(ref(db, `rooms/${rid}/players`), (snap) => {
-                const players = snap.val() || {};
-                const playerArray = Object.entries(players).map(([uid, p]) => ({uid, ...p}));
-                
-                // Sort by join time to establish stable turn order
-                playerArray.sort((a,b) => (a.joinedAt || 0) - (b.joinedAt || 0));
-                
-                // Render List
-                ui.playerList.innerHTML = '';
-                playerArray.forEach(p => {
-                    const el = document.createElement('div');
-                    el.className = 'player-chip';
-                    if(p.uid === currentFlipperId) el.classList.add('is-flipper');
-                    el.innerHTML = `${p.uid === currentFlipperId ? '<span class="crown">👑</span>' : ''}${p.nick}`;
-                    ui.playerList.appendChild(el);
-                });
-
-                // Determine who is the flipper based on flipCount
-                if(playerArray.length > 0) {
-                    const index = currentFlipCount % playerArray.length;
-                    const flipper = playerArray[index];
-                    currentFlipperId = flipper.uid;
-                    
-                    updateTurnUI(flipper.nick);
-                }
-            });
-
-            // 2. Flip Logic
-            onValue(ref(db, `rooms/${rid}/flip`), (snap) => {
-                const data = snap.val();
-                if(!data) {
-                    lastResult = null;
-                    ui.resultText.innerText = "WAITING...";
-                    ui.resultText.classList.remove('glow');
-                    return;
-                }
-                
-                const isNew = (!lastResult || lastResult.id !== data.id);
-                if(isNew) {
-                    lastResult = data;
-                    // If timestamp is fresh (<5s), animate. Else snap.
-                    const fresh = (Date.now() - (data.ts || 0)) < 5000;
-                    updateCoin(data.result, fresh);
-                }
-            });
-
-            // 3. Count (Drives turns)
-            onValue(ref(db, `rooms/${rid}/flipCount`), (snap) => {
-                currentFlipCount = snap.val() || 0;
-                // Triggers player list re-eval for turn
-                // Reset local prediction for new round
-                myPrediction = null;
-                ui.btnHeads.classList.remove('selected');
-                ui.btnTails.classList.remove('selected');
-                
-                // Refresh turn UI if we have players already
-                // (Handled by player listener usually, but fails if players dont change)
-                // Let's force a refresh logic
-                get(ref(db, `rooms/${rid}/players`)).then(s => {
-                   // This is redundant but ensures sync
-                });
-            });
-
-            // 4. Active Dare Overlay
-            onValue(ref(db, `rooms/${rid}/activeDare`), (snap) => {
-                const dare = snap.val();
-                if(dare) {
-                    ui.overlayText.innerText = dare.text;
-                    ui.overlaySender.innerText = dare.fromNick;
-                    ui.overlay.classList.add('visible');
-                } else {
-                    ui.overlay.classList.remove('visible');
-                }
-            });
-            
-            // 5. Check Dare Eligibility (for input panel)
-            // Just check previous round predictions
-            // We do this inside flip completion
-        }
-
-        // --- Game Logic ---
-
-        function updateTurnUI(flipperName) {
-            const isMe = (currentFlipperId === currentUser.uid);
-            
-            if(isMe) {
-                ui.turnIndicator.innerText = "IT'S YOUR TURN TO FLIP!";
-                ui.turnIndicator.className = "turn-indicator your-turn";
-                // Button enabled only if predicted
-                checkFlipButtonState();
-            } else {
-                ui.turnIndicator.innerText = `Waiting for ${flipperName} to flip...`;
-                ui.turnIndicator.className = "turn-indicator";
-                ui.btnFlip.disabled = true;
-                ui.btnFlip.innerText = `WAITING FOR ${flipperName.toUpperCase()}`;
+            try {
+                await signInAnonymously(auth);
+            } catch (e) {
+                ui.btns.enter.disabled = false;
+                ui.btns.enter.innerText = "ENTER ROOM";
+                return toast("Login Failed: " + e.message, "error");
             }
         }
 
-        window.setPrediction = function(side) {
-            if(!currentRoomId) return;
-            if(isFlippingAnim) return;
+        // Auth Listener - Triggers Game Load
+        onAuthStateChanged(getAuth(initializeApp(firebaseConfig)), user => {
+            if(user && myName) {
+                currentUser = user;
+                // Switch Screens
+                ui.screens.start.classList.remove('active');
+                ui.screens.start.classList.add('hidden');
+                ui.screens.game.classList.remove('hidden');
+                ui.screens.game.classList.add('active');
+                
+                setupConnectionStatus();
+                handleRoomLogic();
+            }
+        });
 
-            myPrediction = side;
+        function setupConnectionStatus() {
+            onValue(ref(db, ".info/connected"), snap => {
+                ui.disp.dot.style.background = snap.val() ? "var(--secondary)" : "var(--error)";
+            });
+        }
+
+        async function handleRoomLogic() {
+            const url = new URL(window.location.href);
+            let code = url.searchParams.get("room");
+
+            if(!code) {
+                // Generate Code
+                const arr = new Uint8Array(3); crypto.getRandomValues(arr);
+                code = Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
+                url.searchParams.set("room", code);
+                window.history.replaceState({}, '', url);
+            }
+
+            currentRoomId = code;
+            ui.disp.code.innerText = code;
             
-            // Visuals
-            ui.btnHeads.classList.toggle('selected', side === 'HEADS');
-            ui.btnTails.classList.toggle('selected', side === 'TAILS');
+            // Join Presence
+            const meRef = ref(db, `rooms/${code}/players/${currentUser.uid}`);
+            set(meRef, { 
+                nick: myName, 
+                joinedAt: serverTimestamp(),
+                uid: currentUser.uid // Store UID for easier sorting later
+            });
+            onDisconnect(meRef).remove();
+
+            startSync(code);
+        }
+
+        // --- Sync Logic ---
+        function startSync(rid) {
+            // 1. Players & Turns
+            onValue(ref(db, `rooms/${rid}/players`), snap => {
+                const val = snap.val() || {};
+                // Deterministic Sort: JoinedAt -> UID
+                const arr = Object.values(val).sort((a,b) => {
+                    const tA = a.joinedAt || 0, tB = b.joinedAt || 0;
+                    if(tA !== tB) return tA - tB;
+                    return (a.uid > b.uid) ? 1 : -1;
+                });
+                
+                gameState.players = arr;
+                ui.disp.count.innerText = arr.length;
+                renderPlayers();
+                updateTurnState();
+            });
+
+            // 2. Flip Count (Round)
+            onValue(ref(db, `rooms/${rid}/flipCount`), snap => {
+                const c = snap.val() || 0;
+                gameState.count = c;
+                
+                // Reset local prediction for new round
+                localState.myPrediction = null;
+                ui.btns.predH.classList.remove('selected');
+                ui.btns.predT.classList.remove('selected');
+                
+                updateTurnState();
+            });
+
+            // 3. Flip Result
+            onValue(ref(db, `rooms/${rid}/flip`), snap => {
+                const data = snap.val();
+                if(!data) {
+                    // Reset
+                    ui.disp.result.innerText = "WAITING...";
+                    ui.disp.coin.style.transform = `rotateY(0deg)`;
+                    localState.coinRotation = 0;
+                    gameState.lastResult = null;
+                    return;
+                }
+
+                const isNew = (!gameState.lastResult || gameState.lastResult.id !== data.id);
+                gameState.lastResult = data;
+                
+                // Animate if new, Snap if stale (>4s old)
+                const age = Date.now() - (data.ts || 0);
+                const shouldAnimate = isNew && (age < 4000);
+                
+                performCoinVisuals(data.result, shouldAnimate);
+            });
+
+            // 4. Active Dare
+            onValue(ref(db, `rooms/${rid}/activeDare`), snap => {
+                const d = snap.val();
+                if(d) {
+                    ui.overlay.text.innerText = d.text;
+                    ui.overlay.from.innerText = d.fromNick;
+                    ui.overlay.el.classList.add('visible');
+                } else {
+                    ui.overlay.el.classList.remove('visible');
+                }
+            });
+        }
+
+        // --- Renderers ---
+        function renderPlayers() {
+            ui.disp.list.innerHTML = "";
+            gameState.players.forEach(p => {
+                const el = document.createElement('div');
+                el.className = "p-chip";
+                if(p.uid === currentUser.uid) el.classList.add('me');
+                if(p.uid === gameState.flipperId) el.classList.add('active');
+                
+                el.innerText = (p.uid === gameState.flipperId ? "👑 " : "") + p.nick;
+                ui.disp.list.appendChild(el);
+            });
+        }
+
+        function updateTurnState() {
+            if(gameState.players.length === 0) return;
             
-            // Save to DB
-            const round = currentFlipCount + 1;
+            // Turn Logic: (RoundCount) % (PlayerCount)
+            // Round 0 = Player 0. Round 1 = Player 1.
+            const idx = gameState.count % gameState.players.length;
+            const flipper = gameState.players[idx];
+            gameState.flipperId = flipper.uid;
+            
+            renderPlayers(); // Update crown highlight
+
+            const isMe = (flipper.uid === currentUser.uid);
+            
+            if(isMe) {
+                ui.disp.turn.innerText = "IT'S YOUR TURN!";
+                ui.disp.turn.className = "turn-text my-turn";
+            } else {
+                ui.disp.turn.innerText = `Waiting for ${flipper.nick}...`;
+                ui.disp.turn.className = "turn-text";
+            }
+
+            checkFlipEligibility(isMe);
+        }
+
+        function checkFlipEligibility(isMyTurn) {
+            // Button is enabled IF:
+            // 1. It is my turn
+            // 2. I have predicted
+            // 3. Not currently animating
+            const canFlip = isMyTurn && localState.myPrediction && !localState.isFlipping;
+            
+            ui.btns.flip.disabled = !canFlip;
+            
+            if(!isMyTurn) ui.btns.flip.innerText = "WAITING...";
+            else if(!localState.myPrediction) ui.btns.flip.innerText = "SELECT HEADS/TAILS";
+            else ui.btns.flip.innerText = "FLIP COIN";
+        }
+
+        // --- Actions ---
+
+        function makePred(side) {
+            if(!currentRoomId) return;
+            // Optimistic UI
+            localState.myPrediction = side;
+            ui.btns.predH.classList.toggle('selected', side === 'HEADS');
+            ui.btns.predT.classList.toggle('selected', side === 'TAILS');
+            
+            // DB Update
+            const round = gameState.count + 1; // Predicting for NEXT result
             const updates = {};
             updates[`rooms/${currentRoomId}/predictions/${round}/${currentUser.uid}`] = side;
             update(ref(db), updates);
-
-            checkFlipButtonState();
-        };
-
-        function checkFlipButtonState() {
-            if(currentFlipperId === currentUser.uid) {
-                if(myPrediction) {
-                    ui.btnFlip.disabled = false;
-                    ui.btnFlip.innerText = "FLIP COIN";
-                } else {
-                    ui.btnFlip.disabled = true;
-                    ui.btnFlip.innerText = "SELECT HEADS/TAILS FIRST";
-                }
-            }
+            
+            // Re-eval flip button
+            updateTurnState();
         }
 
-        window.triggerFlip = function() {
-            if(currentFlipperId !== currentUser.uid) return;
-            if(!myPrediction) return showToast("Select Heads or Tails first!", "error");
+        function handleFlip() {
+            if(ui.btns.flip.disabled) return;
 
-            // Transaction to lock and flip
-            const lockRef = ref(db, `rooms/${currentRoomId}/flipLock`);
+            // Lock & Flip Transaction
+            const lockRef = ref(db, `rooms/${currentRoomId}/lock`);
             runTransaction(lockRef, (lock) => {
                 const now = Date.now();
-                if(lock && lock.expiresAt > now && lock.by !== currentUser.uid) return; // Abort
-                return { by: currentUser.uid, expiresAt: now + 5000 };
+                if(lock && lock.expires > now && lock.uid !== currentUser.uid) return; // Locked
+                return { uid: currentUser.uid, expires: now + 5000 };
             }).then(res => {
                 if(res.committed) {
-                    // Logic
-                    const arr = new Uint8Array(1); crypto.getRandomValues(arr);
-                    const isHeads = (arr[0] % 2 === 0);
-                    const resStr = isHeads ? "HEADS" : "TAILS";
-                    
-                    const updates = {};
-                    updates[`rooms/${currentRoomId}/flip`] = {
-                        id: `${currentFlipCount+1}-${Date.now()}`,
-                        result: resStr,
-                        ts: serverTimestamp()
-                    };
-                    updates[`rooms/${currentRoomId}/flipCount`] = currentFlipCount + 1;
-                    updates[`rooms/${currentRoomId}/flipLock`] = null;
-                    
-                    update(ref(db), updates);
+                    executeFlipResult();
+                } else {
+                    toast("Someone else is flipping", "error");
                 }
             });
-        };
+        }
 
-        function updateCoin(resStr, animate) {
+        function executeFlipResult() {
+            // Generate
+            const arr = new Uint8Array(1); crypto.getRandomValues(arr);
+            const res = (arr[0] % 2 === 0) ? "HEADS" : "TAILS";
+            const nextCount = gameState.count + 1;
+            
+            const updates = {};
+            updates[`rooms/${currentRoomId}/flip`] = {
+                id: `${nextCount}-${Date.now()}`,
+                result: res,
+                ts: serverTimestamp()
+            };
+            updates[`rooms/${currentRoomId}/flipCount`] = nextCount;
+            updates[`rooms/${currentRoomId}/lock`] = null; // Release
+            
+            update(ref(db), updates);
+        }
+
+        // --- Visuals ---
+        function performCoinVisuals(res, animate) {
+            const targetDeg = (res === "HEADS") ? 0 : 180;
+            
             if(animate) {
-                isFlippingAnim = true;
-                ui.btnFlip.disabled = true;
+                localState.isFlipping = true;
+                updateTurnState(); // Disable button
                 
                 // Sound
-                const ctx = new (window.AudioContext||window.webkitAudioContext)();
-                const o = ctx.createOscillator(); const g = ctx.createGain();
-                o.connect(g); g.connect(ctx.destination);
-                o.frequency.exponentialRampToValueAtTime(800, ctx.currentTime+0.1);
-                g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime+0.1);
-                o.start(); o.stop(ctx.currentTime+0.1);
+                playSound();
 
-                // Spin
-                ui.coin.style.transition = "transform 3s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
-                const target = (resStr === "HEADS" ? 0 : 180);
-                const spins = 5 * 360;
-                const current = currentCoinRotation % 360;
-                const dist = spins + (target - current);
-                currentCoinRotation += dist;
-                ui.coin.style.transform = `rotateY(${currentCoinRotation}deg)`;
+                // Calculate spin: Add 5 full rotations (1800deg) + difference
+                const minSpins = 1800;
+                const currentMod = localState.coinRotation % 360;
+                const dist = minSpins + (targetDeg - currentMod);
+                localState.coinRotation += dist;
 
+                ui.disp.coin.style.transition = "transform 3s cubic-bezier(0.2, 0.8, 0.2, 1.1)";
+                ui.disp.coin.style.transform = `rotateY(${localState.coinRotation}deg)`;
+                
                 setTimeout(() => {
-                    isFlippingAnim = false;
-                    ui.coin.style.transition = "transform 0.5s";
-                    ui.coin.style.transform = `rotateY(${currentCoinRotation}deg)`; // remove wobble if any
-                    finishFlip(resStr);
+                    localState.isFlipping = false;
+                    finishVisuals(res);
+                    updateTurnState(); // Re-enable if needed (though turn passes)
                 }, 3000);
             } else {
                 // Instant
-                const target = (resStr === "HEADS" ? 0 : 180);
-                currentCoinRotation = target;
-                ui.coin.style.transition = "none";
-                ui.coin.style.transform = `rotateY(${target}deg)`;
-                finishFlip(resStr);
+                localState.coinRotation = targetDeg;
+                ui.disp.coin.style.transition = "none";
+                ui.disp.coin.style.transform = `rotateY(${targetDeg}deg)`;
+                finishVisuals(res);
             }
         }
 
-        function finishFlip(resStr) {
-            ui.resultText.innerText = resStr;
-            ui.resultText.classList.add('glow');
+        function finishVisuals(res) {
+            ui.disp.result.innerText = res;
             
-            // Check Dare Eligibility (Did I predict correctly?)
-            // We look at prediction for THIS completed round
-            // Note: flipCount has already incremented in DB by now usually.
-            // But we need to look at predictions/{flipCount}.
-            // Wait, flipCount in DB is now N. The flip that just finished was N.
-            // So we look at predictions/N.
-            
-            const round = currentFlipCount;
-            get(ref(db, `rooms/${currentRoomId}/predictions/${round}/${currentUser.uid}`)).then(s => {
-                const pred = s.val();
-                if(pred === resStr) {
-                    ui.dareInput.disabled = false;
-                    ui.btnSendDare.disabled = false;
-                    ui.dareInput.placeholder = "You won! Write a dare...";
-                    ui.dareInput.focus();
-                    ui.dareElig.innerText = "YOU WON! SEND A DARE";
-                    ui.dareElig.className = "dare-status success";
+            // Check Win/Loss for Dare Input
+            const round = gameState.count; // Current count reflects the completed flip
+            get(ref(db, `rooms/${currentRoomId}/predictions/${round}/${currentUser.uid}`)).then(snap => {
+                const pred = snap.val();
+                const won = (pred === res);
+                
+                ui.inputs.dare.disabled = !won;
+                ui.btns.sendDare.disabled = !won;
+                
+                if(won) {
+                    ui.inputs.dare.placeholder = "YOU WON! Write a dare...";
+                    ui.disp.elig.innerText = "YOU WON! SEND A DARE";
+                    ui.disp.elig.style.color = "var(--secondary)";
                 } else {
-                    ui.dareInput.disabled = true;
-                    ui.btnSendDare.disabled = true;
-                    ui.dareInput.placeholder = "Only winners can dare";
-                    ui.dareElig.innerText = "Only winners can dare";
-                    ui.dareElig.className = "dare-status";
+                    ui.inputs.dare.placeholder = "Only winners can dare";
+                    ui.disp.elig.innerText = "Only winners can dare";
+                    ui.disp.elig.style.color = "var(--text-dim)";
                 }
             });
         }
 
         // --- Dares ---
-
-        window.sendDare = function() {
-            const txt = ui.dareInput.value.trim();
-            if(!txt) return;
+        function handleSendDare() {
+            const text = ui.inputs.dare.value.trim();
+            if(!text) return;
             
-            // Set Active Dare
             set(ref(db, `rooms/${currentRoomId}/activeDare`), {
-                text: txt,
-                fromNick: myName,
-                ts: serverTimestamp()
+                text: text,
+                fromNick: myName
             });
-            
-            ui.dareInput.value = "";
-        };
+            ui.inputs.dare.value = "";
+        }
 
-        window.completeDare = function() {
-            // Remove Active Dare
+        function handleDoneDare() {
             set(ref(db, `rooms/${currentRoomId}/activeDare`), null);
-        };
+        }
 
-        // --- Helpers ---
-        window.copyInviteLink = function() {
+        // --- Utilities ---
+        function handleReset() {
+            if(confirm("Reset entire room?")) {
+                const u = {};
+                u[`rooms/${currentRoomId}/flip`] = null;
+                u[`rooms/${currentRoomId}/flipCount`] = 0;
+                u[`rooms/${currentRoomId}/activeDare`] = null;
+                u[`rooms/${currentRoomId}/predictions`] = null;
+                update(ref(db), u);
+            }
+        }
+
+        function copyLink() {
             const url = new URL(window.location.href);
             url.searchParams.set("room", currentRoomId);
             const str = url.toString();
             
-            if(navigator.clipboard) {
-                navigator.clipboard.writeText(str).then(()=>showToast("Link Copied","success"));
+            // Robust Fallback
+            if(navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(str).then(() => toast("Link Copied", "success"))
+                .catch(() => fallbackCopy(str));
             } else {
-                // Fallback
-                const el = document.createElement('textarea');
-                el.value = str; document.body.appendChild(el);
-                el.select(); document.execCommand('copy');
-                document.body.removeChild(el);
-                showToast("Link Copied","success");
+                fallbackCopy(str);
             }
-        };
+        }
 
-        window.resetRoom = function() {
-            if(confirm("Reset room?")) {
-                const u = {};
-                u[`rooms/${currentRoomId}/flip`] = null;
-                u[`rooms/${currentRoomId}/flipCount`] = 0;
-                u[`rooms/${currentRoomId}/predictions`] = null;
-                u[`rooms/${currentRoomId}/activeDare`] = null;
-                update(ref(db), u);
+        function fallbackCopy(str) {
+            const el = document.createElement('textarea');
+            el.value = str;
+            document.body.appendChild(el);
+            el.select();
+            try {
+                document.execCommand('copy');
+                toast("Link Copied", "success");
+            } catch (e) {
+                toast("Copy failed", "error");
             }
-        };
+            document.body.removeChild(el);
+        }
 
-        window.showToast = function(msg, type) {
+        function playSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(600, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                osc.start(); osc.stop(ctx.currentTime + 0.2);
+            } catch(e) {}
+        }
+
+        function toast(msg, type) {
             const el = document.createElement('div');
             el.className = `toast ${type}`;
             el.innerText = msg;
-            document.getElementById('toastContainer').appendChild(el);
-            setTimeout(()=>el.remove(), 3000);
-        };
+            document.getElementById('toastBox').appendChild(el);
+            setTimeout(() => {
+                el.style.animation = "fadeOut 0.3s forwards";
+                setTimeout(() => el.remove(), 300);
+            }, 3000);
+        }
+
+        // --- Run ---
+        init();
+
     </script>
 </body>
 </html>
