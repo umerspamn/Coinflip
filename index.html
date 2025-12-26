@@ -290,8 +290,12 @@
             measurementId: "G-D45WX8RGCW"
         };
 
+        // --- Initialization ---
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
         // --- State ---
-        let app, auth, db;
         let currentUser = null;
         let myName = "";
         let currentRoomId = null;
@@ -345,10 +349,6 @@
         // --- Initialization ---
         function init() {
             try {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getDatabase(app);
-                
                 // Restore Name
                 const saved = localStorage.getItem('cf_name');
                 if(saved) ui.inputs.name.value = saved;
@@ -365,7 +365,7 @@
                 ui.btns.doneDare.addEventListener('click', handleDoneDare);
 
             } catch (e) {
-                toast("Firebase Error: " + e.message, "error");
+                toast("Init Error: " + e.message, "error");
             }
         }
 
@@ -389,7 +389,7 @@
         }
 
         // Auth Listener - Triggers Game Load
-        onAuthStateChanged(getAuth(initializeApp(firebaseConfig)), user => {
+        onAuthStateChanged(auth, user => {
             if(user && myName) {
                 currentUser = user;
                 // Switch Screens

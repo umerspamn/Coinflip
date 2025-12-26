@@ -3,6 +3,10 @@ import os
 from playwright.sync_api import sync_playwright, expect
 
 def test_start_screen(page):
+    # Capture console logs and errors
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda exc: print(f"PAGE ERROR: {exc}"))
+
     # Load the page
     page.goto("http://localhost:8000")
 
@@ -26,6 +30,13 @@ def test_start_screen(page):
     enter_btn = page.locator("#btnEnter")
     expect(enter_btn).to_be_visible()
     expect(enter_btn).to_have_text("ENTER ROOM")
+
+    # Check for error toasts (wait a bit to ensure they would appear)
+    page.wait_for_timeout(1000)
+    error_toast = page.locator(".toast.error")
+    if error_toast.count() > 0:
+        print(f"Error toast found: {error_toast.first.inner_text()}")
+    expect(error_toast).to_have_count(0)
 
     # Take screenshot of start screen
     if not os.path.exists("tests/screenshots"):
