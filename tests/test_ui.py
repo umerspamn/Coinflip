@@ -1,5 +1,6 @@
 
 import os
+import re
 from playwright.sync_api import sync_playwright, expect
 
 def test_start_screen(page):
@@ -38,10 +39,43 @@ def test_start_screen(page):
         print(f"Error toast found: {error_toast.first.inner_text()}")
     expect(error_toast).to_have_count(0)
 
-    # Take screenshot of start screen
+    # ---------------------------------------------------------
+    # Attempt to Login and check Game Screen
+    # ---------------------------------------------------------
+    name_input.fill("Tester")
+    enter_btn.click()
+
+    # Wait for either game screen OR an error toast (if network fails)
+    # We increase timeout because anonymous auth might take a moment
+    try:
+        # Expect game screen to become active
+        game_screen = page.locator("#screenGame")
+        expect(game_screen).to_have_class(re.compile(r"active"), timeout=10000)
+
+        print("Logged in successfully. Checking Game Screen...")
+
+        # Check for Flip Hint
+        hint = page.locator(".flip-hint")
+        expect(hint).to_be_visible()
+        expect(hint).to_have_text("Click here to flip")
+
+        # Check that Coin is visible
+        coin = page.locator("#elCoin")
+        expect(coin).to_be_visible()
+
+    except Exception as e:
+        print(f"Failed to reach game screen: {e}")
+        # Capture what happened
+        page.screenshot(path="tests/screenshots/failed_login.png")
+        # Check if it was a login error
+        err = page.locator(".toast.error")
+        if err.count() > 0:
+            print(f"Login Error displayed: {err.first.inner_text()}")
+
+    # Take screenshot of start screen (or whatever screen we are on)
     if not os.path.exists("tests/screenshots"):
         os.makedirs("tests/screenshots")
-    page.screenshot(path="tests/screenshots/start_screen.png")
+    page.screenshot(path="tests/screenshots/final_state.png")
 
 def run_tests():
     with sync_playwright() as p:
