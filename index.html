@@ -1,192 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Coin Flip Dare</title>
-  <meta name="theme-color" content="#121212">
-  <meta name="description" content="Multiplayer Coin Flip with Dares">
-
-  <style>
-    :root {
-      --bg: #121212;
-      --surface: #1e1e1e;
-      --surface-light: #2c2c2c;
-      --primary: #bb86fc;
-      --secondary: #03dac6;
-      --error: #cf6679;
-      --text: #e0e0e0;
-      --text-dim: #a0a0a0;
-      --radius: 16px;
-      --coin-size: 150px;
-    }
-
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body {
-      margin: 0; padding: 0;
-      background-color: var(--bg); color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-    }
-
-    .screen {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      display: flex; flex-direction: column;
-      transition: transform 0.3s ease, opacity 0.3s ease;
-      background: var(--bg); z-index: 10;
-    }
-    .screen.hidden { transform: translateY(100%); opacity: 0; pointer-events: none; z-index: 0; }
-    .screen.active { transform: translateY(0); opacity: 1; z-index: 20; }
-
-    #startScreen { justify-content: center; align-items: center; padding: 20px; }
-    .start-card {
-      background: var(--surface); padding: 40px 30px;
-      border-radius: 24px; width: 100%; max-width: 380px;
-      text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-    .start-title {
-      font-size: 2rem; font-weight: 900; color: var(--primary);
-      margin-bottom: 30px; letter-spacing: 1px; text-transform: uppercase;
-    }
-    .input-lg {
-      width: 100%; padding: 16px; background: var(--bg);
-      border: 2px solid var(--surface-light); border-radius: 12px;
-      color: white; font-size: 1.2rem; text-align: center; margin-bottom: 20px;
-    }
-    .input-lg:focus { border-color: var(--primary); outline: none; }
-
-    header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
-    .logo { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; }
-
-    .main-scroll {
-      flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 120px;
-      max-width: 600px; margin: 0 auto; width: 100%;
-    }
-
-    .panel {
-      background: var(--surface); border-radius: var(--radius);
-      padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-    }
-
-    .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .room-badge {
-      display: flex; align-items: center; gap: 8px; background: var(--surface-light);
-      padding: 4px 8px 4px 12px; border-radius: 20px; font-family: monospace; font-size: 1rem; color: var(--secondary);
-    }
-    .copy-btn {
-      background: none; border: none; color: white; cursor: pointer; padding: 4px; display: flex;
-    }
-
-    .player-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-    .p-chip {
-      font-size: 0.8rem; padding: 5px 10px; border-radius: 10px; background: var(--surface-light);
-      border: 1px solid transparent; opacity: 0.7; transition: all 0.3s;
-    }
-    .p-chip.active { opacity: 1; border-color: var(--primary); background: rgba(187, 134, 252, 0.15); font-weight: bold; }
-    .p-chip.me { color: var(--secondary); border-color: var(--secondary); opacity: 1; }
-
-    .coin-stage {
-      height: 220px; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; position: relative;
-    }
-    .coin-scene { width: var(--coin-size); height: var(--coin-size); perspective: 1000px; }
-    .coin-obj {
-      width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.5s ease-out;
-    }
-    .face {
-      position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-size: 3rem; font-weight: 900; border: 4px solid #DAA520;
-      box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
-    }
-    .face.front { background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b); color: #5a4a00; transform: rotateY(0deg); }
-    .face.back { background: radial-gradient(circle at 30% 30%, #e0e0e0, #909090); color: #333; transform: rotateY(180deg); border-color: #a0a0a0; }
-
-    .result-text {
-      font-size: 1.5rem; font-weight: 800; letter-spacing: 3px; min-height: 1.5em;
-      margin-top: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
-    .turn-text { font-size: 0.9rem; color: var(--text-dim); margin-top: 4px; font-weight: 500; }
-    .turn-text.my-turn { color: var(--primary); animation: pulseText 2s infinite; }
-
-    .pred-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-    .btn-opt {
-      padding: 14px; background: var(--surface-light); border: 2px solid transparent;
-      color: var(--text); border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
-    }
-    .btn-opt.selected { border-color: var(--secondary); background: rgba(3, 218, 198, 0.1); color: var(--secondary); }
-
-    .dare-panel { flex: 1; display: flex; flex-direction: column; min-height: 120px; }
-    .dare-input-row { display: flex; gap: 8px; margin-top: auto; }
-    .inp-dare {
-      flex: 1; background: var(--bg); border: 1px solid var(--surface-light);
-      border-radius: 8px; padding: 10px; color: white;
-    }
-    .btn-send {
-      background: var(--secondary); color: black; border: none; font-weight: 800;
-      padding: 0 16px; border-radius: 8px; cursor: pointer;
-    }
-    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; width: 100%;
-      background: var(--surface); padding: 12px;
-      display: grid; grid-template-columns: auto auto 1fr; gap: 8px;
-      box-shadow: 0 -5px 20px rgba(0,0,0,0.4); max-width: 600px; left: 50%; transform: translateX(-50%);
-    }
-    .nav-btn {
-      height: 50px; border-radius: 10px; border: none; font-weight: 700;
-      cursor: pointer; padding: 0 16px; font-size: 0.9rem;
-    }
-    .btn-act { background: var(--surface-light); color: var(--text); }
-    .btn-flip { background: var(--primary); color: #000; font-size: 1.1rem; }
-    .btn-flip:disabled { opacity: 0.4; cursor: not-allowed; background: var(--surface-light); color: var(--text-dim); }
-
-    .overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.92); z-index: 100;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 40px; text-align: center;
-    }
-    .overlay.visible { opacity: 1; pointer-events: auto; }
-    .dare-big-title { color: var(--error); font-size: 1.2rem; font-weight: 900; letter-spacing: 4px; margin-bottom: 20px; }
-    .dare-big-text { font-size: 1.8rem; font-weight: 700; line-height: 1.4; margin-bottom: 30px; }
-    .btn-done {
-      background: white; color: black; border: none; padding: 15px 40px;
-      border-radius: 50px; font-weight: 900; font-size: 1.1rem; cursor: pointer;
-      transform: scale(1); animation: pulseBtn 2s infinite;
-    }
-
-    .toast-box {
-      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-      display: flex; flex-direction: column; gap: 10px; z-index: 200; width: 90%; max-width: 350px; pointer-events: none;
-    }
-    .toast {
-      background: var(--surface); color: white; padding: 12px 16px; border-radius: 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; font-size: 0.9rem;
-      animation: slideDown 0.3s ease-out; border-left: 4px solid var(--text-dim);
-    }
-    .toast.success { border-color: var(--secondary); }
-    .toast.error { border-color: var(--error); }
-
-    @keyframes pulseText { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-    @keyframes pulseBtn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-    @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    @keyframes fadeOut { to { opacity: 0; } }
-  </style>
+  <meta name="theme-color" content="#121212" />
+  <meta name="description" content="Multiplayer Coin Flip with Dares" />
+  <link rel="stylesheet" href="./css/styles.css" />
 </head>
 
 <body>
+  <!-- --- START SCREEN --- -->
   <div id="screenStart" class="screen active">
     <div id="startScreen">
       <div class="start-card">
         <div class="start-title">Coin Flip Dare</div>
-        <input type="text" id="inpName" class="input-lg" placeholder="Enter Your Nickname" maxlength="12">
+        <input type="text" id="inpName" class="input-lg" placeholder="Enter Your Nickname" maxlength="12" />
         <button id="btnEnter" class="nav-btn btn-flip" style="width:100%">ENTER ROOM</button>
       </div>
     </div>
   </div>
 
+  <!-- --- GAME SCREEN --- -->
   <div id="screenGame" class="screen hidden">
     <header>
       <div class="logo">COIN FLIP DARE</div>
@@ -194,6 +29,7 @@
     </header>
 
     <div class="main-scroll">
+      <!-- Room & Players -->
       <div class="panel">
         <div class="info-row">
           <div class="room-badge">
@@ -210,6 +46,7 @@
         <div class="player-grid" id="listPlayers"></div>
       </div>
 
+      <!-- Coin -->
       <div class="coin-stage">
         <div class="coin-scene">
           <div class="coin-obj" id="elCoin">
@@ -221,6 +58,7 @@
         <div class="turn-text" id="dispTurn">Loading game data...</div>
       </div>
 
+      <!-- Predictions -->
       <div class="panel">
         <div class="info-row" style="margin-bottom:8px">
           <span style="font-weight:700; font-size:0.8rem; color:var(--text-dim);">PREDICTION</span>
@@ -231,13 +69,14 @@
         </div>
       </div>
 
+      <!-- Dare Chat -->
       <div class="panel dare-panel">
         <div class="info-row">
           <span style="font-weight:700; font-size:0.8rem; color:var(--text-dim);">DARE CHAT</span>
           <span id="dispEligible" style="font-size:0.7rem; color:var(--text-dim);">Winners can dare</span>
         </div>
         <div class="dare-input-row">
-          <input type="text" id="inpDare" class="inp-dare" placeholder="Enter a dare..." disabled>
+          <input type="text" id="inpDare" class="inp-dare" placeholder="Enter a dare..." disabled />
           <button id="btnSendDare" class="btn-send" disabled>SEND</button>
         </div>
       </div>
@@ -250,6 +89,7 @@
     </div>
   </div>
 
+  <!-- --- OVERLAY --- -->
   <div id="overlayDare" class="overlay">
     <div class="dare-big-title">ACTIVE DARE</div>
     <div class="dare-big-text" id="overlayText">...</div>
@@ -259,281 +99,6 @@
 
   <div class="toast-box" id="toastBox"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, set, onValue, serverTimestamp, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAwlWUvMOBfz2pTh18MqpDsVk3Hl-xPmJQ",
-      authDomain: "coinflip-97336.firebaseapp.com",
-      databaseURL: "https://coinflip-97336-default-rtdb.firebaseio.com",
-      projectId: "coinflip-97336",
-      storageBucket: "coinflip-97336.firebasestorage.app",
-      messagingSenderId: "1026597403544",
-      appId: "1:1026597403544:web:f204ff9806ca73b7ecc9ed",
-      measurementId: "G-D45WX8RGCW"
-    };
-
-    let app, auth, db;
-    let currentUser = null;
-    let myName = "";
-    let currentRoomId = null;
-    let playersUnsubbed = false;
-
-    const ui = {
-      screens: { start: document.getElementById("screenStart"), game: document.getElementById("screenGame") },
-      inputs: { name: document.getElementById("inpName"), dare: document.getElementById("inpDare") },
-      btns: {
-        enter: document.getElementById("btnEnter"),
-        flip: document.getElementById("btnFlip"),
-        reset: document.getElementById("btnReset"),
-        copy1: document.getElementById("btnCopyLink"),
-        copy2: document.getElementById("btnCopyBtm"),
-        predH: document.getElementById("btnPredH"),
-        predT: document.getElementById("btnPredT"),
-        sendDare: document.getElementById("btnSendDare"),
-        doneDare: document.getElementById("btnDoneDare")
-      },
-      disp: {
-        code: document.getElementById("dispCode"),
-        list: document.getElementById("listPlayers"),
-        count: document.getElementById("dispCount"),
-        coin: document.getElementById("elCoin"),
-        result: document.getElementById("dispResult"),
-        turn: document.getElementById("dispTurn"),
-        elig: document.getElementById("dispEligible"),
-        dot: document.getElementById("statusDot")
-      },
-      overlay: {
-        el: document.getElementById("overlayDare"),
-        text: document.getElementById("overlayText"),
-        from: document.getElementById("overlayFrom")
-      },
-      toastBox: document.getElementById("toastBox")
-    };
-
-    const localState = { prediction: null };
-
-    function log(...a) { console.log("[CF]", ...a); }
-
-    function toast(msg, type = "success") {
-      const box = ui.toastBox;
-      if (!box) return alert(msg);
-      const t = document.createElement("div");
-      t.className = `toast ${type === "error" ? "error" : "success"}`;
-      t.textContent = msg;
-      box.appendChild(t);
-      setTimeout(() => {
-        t.style.animation = "fadeOut 0.35s ease forwards";
-        setTimeout(() => t.remove(), 380);
-      }, 2200);
-    }
-
-    function showGame() {
-      ui.screens.start.classList.remove("active");
-      ui.screens.start.classList.add("hidden");
-      ui.screens.game.classList.remove("hidden");
-      ui.screens.game.classList.add("active");
-    }
-
-    function getOrCreateRoomCode() {
-      const url = new URL(window.location.href);
-      let code = (url.searchParams.get("room") || "").trim().toUpperCase();
-
-      if (!code) {
-        const arr = new Uint8Array(3);
-        crypto.getRandomValues(arr);
-        code = Array.from(arr).map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
-        url.searchParams.set("room", code);
-        window.history.replaceState({}, "", url);
-      } else {
-        code = code.replace(/[^0-9A-F]/g, "").slice(0, 6);
-        if (code.length < 6) code = code.padEnd(6, "0");
-        url.searchParams.set("room", code);
-        window.history.replaceState({}, "", url);
-      }
-      return code;
-    }
-
-    function roomLink() {
-      const url = new URL(window.location.href);
-      if (currentRoomId) url.searchParams.set("room", currentRoomId);
-      return url.toString();
-    }
-
-    async function copyText(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        return true;
-      } catch {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.position = "fixed";
-        ta.style.left = "-9999px";
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        try {
-          const ok = document.execCommand("copy");
-          ta.remove();
-          return ok;
-        } catch {
-          ta.remove();
-          return false;
-        }
-      }
-    }
-
-    async function copyLink() {
-      const ok = await copyText(roomLink());
-      toast(ok ? "Room link copied" : "Copy failed", ok ? "success" : "error");
-    }
-
-    function setupConnectionStatus() {
-      onValue(ref(db, ".info/connected"), snap => {
-        const ok = !!snap.val();
-        ui.disp.dot.style.background = ok ? "var(--secondary)" : "var(--error)";
-      });
-    }
-
-    function renderPlayers(obj) {
-      const entries = Object.values(obj || {});
-      ui.disp.count.textContent = String(entries.length);
-
-      ui.disp.list.innerHTML = "";
-      entries
-        .sort((a, b) => String(a.nick || "").localeCompare(String(b.nick || "")))
-        .forEach(p => {
-          const chip = document.createElement("div");
-          chip.className = "p-chip";
-          chip.textContent = p.nick || "Player";
-          if (p.uid === currentUser?.uid) chip.classList.add("me");
-          ui.disp.list.appendChild(chip);
-        });
-
-      log("players updated", entries.length);
-    }
-
-    async function handleEnter() {
-      log("enter clicked");
-      const name = (ui.inputs.name.value || "").trim();
-      if (!name) return toast("Please enter a name", "error");
-
-      myName = name;
-      localStorage.setItem("cf_name", name);
-
-      ui.btns.enter.disabled = true;
-      ui.btns.enter.innerText = "CONNECTING...";
-
-      try {
-        await signInAnonymously(auth);
-        log("sign-in success", auth.currentUser?.uid);
-        // auth state listener will continue
-      } catch (e) {
-        console.error(e);
-        ui.btns.enter.disabled = false;
-        ui.btns.enter.innerText = "ENTER ROOM";
-        toast("Login Failed: " + e.message, "error");
-      }
-    }
-
-    async function joinRoomAndListen() {
-      const code = getOrCreateRoomCode();
-      currentRoomId = code;
-      ui.disp.code.textContent = code;
-      log("room code", code);
-
-      const meRef = ref(db, `rooms/${code}/players/${currentUser.uid}`);
-      await set(meRef, {
-        nick: myName,
-        joinedAt: serverTimestamp(),
-        uid: currentUser.uid
-      });
-      log("presence set", currentUser.uid);
-
-      onDisconnect(meRef).remove();
-
-      const playersRef = ref(db, `rooms/${code}/players`);
-      onValue(playersRef, snap => {
-        renderPlayers(snap.val() || {});
-        ui.disp.turn.textContent = `Connected as ${myName}. Share LINK to invite.`;
-        ui.btns.flip.disabled = !localState.prediction;
-      });
-    }
-
-    function makePred(side) {
-      localState.prediction = side;
-      ui.btns.predH.classList.toggle("selected", side === "HEADS");
-      ui.btns.predT.classList.toggle("selected", side === "TAILS");
-      ui.btns.flip.disabled = false;
-      toast(`Selected ${side}`, "success");
-    }
-
-    function handleReset() {
-      localState.prediction = null;
-      ui.btns.predH.classList.remove("selected");
-      ui.btns.predT.classList.remove("selected");
-      ui.btns.flip.disabled = true;
-      ui.disp.result.textContent = "WAITING...";
-      toast("Reset (local)", "success");
-    }
-
-    function init() {
-      log("init");
-
-      app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getDatabase(app);
-
-      const saved = localStorage.getItem("cf_name");
-      if (saved) ui.inputs.name.value = saved;
-
-      ui.btns.enter.addEventListener("click", handleEnter);
-      ui.btns.copy1.addEventListener("click", copyLink);
-      ui.btns.copy2.addEventListener("click", copyLink);
-      ui.btns.reset.addEventListener("click", handleReset);
-
-      ui.btns.predH.addEventListener("click", () => makePred("HEADS"));
-      ui.btns.predT.addEventListener("click", () => makePred("TAILS"));
-
-      // Placeholder buttons to avoid runtime errors (your game logic can replace these later)
-      ui.btns.flip.addEventListener("click", () => toast("Flip logic not implemented yet", "error"));
-      ui.btns.sendDare.addEventListener("click", () => toast("Dare chat not implemented yet", "error"));
-      ui.btns.doneDare.addEventListener("click", () => ui.overlay.el.classList.remove("visible"));
-
-      setupConnectionStatus();
-
-      onAuthStateChanged(auth, async (user) => {
-        log("auth state", user ? user.uid : "no user");
-
-        currentUser = user || null;
-
-        if (!currentUser) {
-          ui.btns.enter.disabled = false;
-          ui.btns.enter.innerText = "ENTER ROOM";
-          return;
-        }
-
-        // Only enter game if a nickname exists (pressing ENTER sets it)
-        if (!myName) return;
-
-        showGame();
-        ui.btns.enter.disabled = false;
-        ui.btns.enter.innerText = "ENTER ROOM";
-
-        try {
-          await joinRoomAndListen();
-        } catch (e) {
-          console.error(e);
-          toast("Room join failed: " + e.message, "error");
-        }
-      });
-
-      log("init done");
-    }
-
-    init();
-  </script>
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
