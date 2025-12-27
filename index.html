@@ -345,13 +345,32 @@
         // --- Initialization ---
         function init() {
             try {
+                // Initialize Firebase ONCE
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getDatabase(app);
                 
                 // Restore Name
                 const saved = localStorage.getItem('cf_name');
-                if(saved) ui.inputs.name.value = saved;
+                if(saved) {
+                    ui.inputs.name.value = saved;
+                    myName = saved;
+                }
+
+                // Auth Listener - using the SAME auth instance
+                onAuthStateChanged(auth, user => {
+                    if(user && myName) {
+                        currentUser = user;
+                        // Switch Screens
+                        ui.screens.start.classList.remove('active');
+                        ui.screens.start.classList.add('hidden');
+                        ui.screens.game.classList.remove('hidden');
+                        ui.screens.game.classList.add('active');
+
+                        setupConnectionStatus();
+                        handleRoomLogic();
+                    }
+                });
 
                 // Setup Listeners
                 ui.btns.enter.addEventListener('click', handleEnter);
@@ -365,6 +384,7 @@
                 ui.btns.doneDare.addEventListener('click', handleDoneDare);
 
             } catch (e) {
+                console.error(e);
                 toast("Firebase Error: " + e.message, "error");
             }
         }
@@ -382,26 +402,12 @@
             try {
                 await signInAnonymously(auth);
             } catch (e) {
+                console.error(e);
                 ui.btns.enter.disabled = false;
                 ui.btns.enter.innerText = "ENTER ROOM";
                 return toast("Login Failed: " + e.message, "error");
             }
         }
-
-        // Auth Listener - Triggers Game Load
-        onAuthStateChanged(getAuth(initializeApp(firebaseConfig)), user => {
-            if(user && myName) {
-                currentUser = user;
-                // Switch Screens
-                ui.screens.start.classList.remove('active');
-                ui.screens.start.classList.add('hidden');
-                ui.screens.game.classList.remove('hidden');
-                ui.screens.game.classList.add('active');
-                
-                setupConnectionStatus();
-                handleRoomLogic();
-            }
-        });
 
         function setupConnectionStatus() {
             onValue(ref(db, ".info/connected"), snap => {
@@ -426,11 +432,14 @@
             
             // Join Presence
             const meRef = ref(db, `rooms/${code}/players/${currentUser.uid}`);
-            set(meRef, { 
+
+            // Wait for presence write
+            await set(meRef, {
                 nick: myName, 
                 joinedAt: serverTimestamp(),
                 uid: currentUser.uid // Store UID for easier sorting later
             });
+
             onDisconnect(meRef).remove();
 
             startSync(code);
@@ -754,5 +763,3 @@
     </script>
 </body>
 </html>
-
-
