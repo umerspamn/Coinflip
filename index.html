@@ -390,6 +390,10 @@
 
             try {
                 await signInAnonymously(auth);
+                // If already signed in, listener might not fire, so try manual join
+                if(auth.currentUser) {
+                    attemptJoin(auth.currentUser);
+                }
             } catch (e) {
                 ui.btns.enter.disabled = false;
                 ui.btns.enter.innerText = "ENTER ROOM";
@@ -399,6 +403,13 @@
 
         // Auth Listener - Triggers Game Load
         onAuthStateChanged(auth, user => {
+            attemptJoin(user);
+        });
+
+        function attemptJoin(user) {
+            // Prevent double join
+            if(currentRoomId) return;
+
             if(user && myName) {
                 currentUser = user;
                 // Switch Screens
@@ -410,7 +421,7 @@
                 setupConnectionStatus();
                 handleRoomLogic();
             }
-        });
+        }
 
         function setupConnectionStatus() {
             onValue(ref(db, ".info/connected"), snap => {
@@ -428,6 +439,14 @@
                 code = Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
                 url.searchParams.set("room", code);
                 window.history.replaceState({}, '', url);
+            } else {
+                // Force Uppercase
+                code = code.toUpperCase();
+                // Update URL if needed (for clean sharing)
+                if(code !== url.searchParams.get("room")) {
+                    url.searchParams.set("room", code);
+                    window.history.replaceState({}, '', url);
+                }
             }
 
             currentRoomId = code;
@@ -457,6 +476,18 @@
                     return (a.uid > b.uid) ? 1 : -1;
                 });
                 
+                // Check for new players (Notification)
+                if(gameState.players.length > 0 && arr.length > gameState.players.length) {
+                    // Simple check: If count increased
+                    // Identify new player(s)
+                    const oldIds = new Set(gameState.players.map(p => p.uid));
+                    arr.forEach(p => {
+                        if(!oldIds.has(p.uid) && p.uid !== currentUser.uid) {
+                            toast(`${p.nick} joined!`, "success");
+                        }
+                    });
+                }
+
                 gameState.players = arr;
                 ui.disp.count.innerText = arr.length;
                 renderPlayers();
