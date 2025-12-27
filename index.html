@@ -357,7 +357,10 @@
             try {
                 // Restore Name
                 const saved = localStorage.getItem('cf_name');
-                if(saved) ui.inputs.name.value = saved;
+                if(saved) {
+                    ui.inputs.name.value = saved;
+                    myName = saved; // Set global state for auto-login
+                }
 
                 // Setup Listeners
                 ui.btns.enter.addEventListener('click', handleEnter);
@@ -389,11 +392,14 @@
             ui.btns.enter.innerText = "CONNECTING...";
 
             try {
-                await signInAnonymously(auth);
-                // If already signed in, listener might not fire, so try manual join
-                if(auth.currentUser) {
+                // Check if already signed in
+                if (auth.currentUser) {
                     attemptJoin(auth.currentUser);
+                    return;
                 }
+
+                const cred = await signInAnonymously(auth);
+                attemptJoin(cred.user);
             } catch (e) {
                 ui.btns.enter.disabled = false;
                 ui.btns.enter.innerText = "ENTER ROOM";
