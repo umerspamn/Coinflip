@@ -344,6 +344,7 @@
 
         // --- Initialization ---
         function init() {
+            console.log("init");
             try {
                 // Initialize Firebase ONCE
                 app = initializeApp(firebaseConfig);
@@ -359,6 +360,7 @@
 
                 // Auth Listener - using the SAME auth instance
                 onAuthStateChanged(auth, user => {
+                    console.log("auth state changed", user ? user.uid : "no user");
                     if(user && myName) {
                         currentUser = user;
                         // Switch Screens
@@ -391,6 +393,7 @@
 
         // --- Auth & Room Entry ---
         async function handleEnter() {
+            console.log("enter clicked");
             const name = ui.inputs.name.value.trim();
             if(!name) return toast("Please enter a name", "error");
             
@@ -401,6 +404,7 @@
 
             try {
                 await signInAnonymously(auth);
+                console.log("sign-in success");
             } catch (e) {
                 console.error(e);
                 ui.btns.enter.disabled = false;
@@ -426,6 +430,7 @@
                 url.searchParams.set("room", code);
                 window.history.replaceState({}, '', url);
             }
+            console.log("room code", code);
 
             currentRoomId = code;
             ui.disp.code.innerText = code;
@@ -439,6 +444,7 @@
                 joinedAt: serverTimestamp(),
                 uid: currentUser.uid // Store UID for easier sorting later
             });
+            console.log("presence set");
 
             onDisconnect(meRef).remove();
 
@@ -450,6 +456,7 @@
             // 1. Players & Turns
             onValue(ref(db, `rooms/${rid}/players`), snap => {
                 const val = snap.val() || {};
+                console.log("players updated", Object.keys(val).length);
                 // Deterministic Sort: JoinedAt -> UID
                 const arr = Object.values(val).sort((a,b) => {
                     const tA = a.joinedAt || 0, tB = b.joinedAt || 0;
