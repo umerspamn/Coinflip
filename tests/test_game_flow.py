@@ -12,6 +12,10 @@ def test_game_flow():
         # --- Player A ---
         context_a = browser.new_context()
         page_a = context_a.new_page()
+        # Capture logs
+        page_a.on("console", lambda msg: print(f"A-CONSOLE: {msg.text}"))
+        page_a.on("pageerror", lambda exc: print(f"A-ERROR: {exc}"))
+
         page_a.goto("http://localhost:8000")
 
         # Login A
@@ -27,6 +31,10 @@ def test_game_flow():
         # --- Player B ---
         context_b = browser.new_context()
         page_b = context_b.new_page()
+        # Capture logs
+        page_b.on("console", lambda msg: print(f"B-CONSOLE: {msg.text}"))
+        page_b.on("pageerror", lambda exc: print(f"B-ERROR: {exc}"))
+
         page_b.goto(f"http://localhost:8000/?room={room_code}")
 
         # Login B
@@ -83,6 +91,18 @@ def test_game_flow():
 
         res_a_2 = page_a.locator("#dispResult").inner_text()
         print(f"Result Round 2: {res_a_2}")
+
+        # --- Test Reset ---
+        print("Testing Reset...")
+        page_a.on("dialog", lambda dialog: dialog.accept())
+        page_a.click("#btnReset")
+        time.sleep(1)
+
+        # Verify Reset State
+        # Count should be 0
+        # Result should be WAITING...
+        expect(page_a.locator("#dispResult")).to_have_text("WAITING...")
+        expect(page_b.locator("#dispResult")).to_have_text("WAITING...")
 
         # Success if we got here
         print("Game flow test passed!")
