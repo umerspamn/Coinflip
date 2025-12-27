@@ -112,5 +112,11 @@ function init() {
 
   log("init done");
 }
+window.onerror = (msg, src, line, col, err) => {
+  alert(`ERR: ${msg}\n${src}:${line}:${col}`);
+};
 
+window.onunhandledrejection = (e) => {
+  alert(`PROMISE ERR: ${e.reason?.message || e.reason}`);
+};
 init();
